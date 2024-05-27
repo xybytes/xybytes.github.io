@@ -13,11 +13,11 @@ site-twitter: #if your site has a twitter account, enter it here
 # Author Settings
 author: Christian Bortone # add your name
 author-img: christian-bortone.jpg # add your photo
-about-author: I am a web developer focusing on front-end development. Always hungry to keep learning. # add description
-social-twitter: # add your Twitter handle
-social-github: artemsheludko # add your Github handle
-social-linkedin: # add your Linkedin handle
-social-email: # add your Email address
+about-author: I am penetration tester and security researcher in my free time. I enjoy diving deep into Active Directory, Azure, and uncovering undocumented aspects of Microsoft technologies.
+social-twitter: xybytes # add your Twitter handle
+social-github: xybytes # add your Github handle
+social-linkedin: christianbortone # add your Linkedin handle
+social-email: christianbortone@gmail.com # add your Email address
 
 # Tracker
 analytics: # Google Analytics
