@@ -26,7 +26,7 @@ Three choices exist for including a new machine. Our emphasis is on _Adding mult
 
 ![Add machine]({{site.baseurl}}/assets/img/Azure_Arc/add_machine_01.png)
 
-To integrate a new internal server (a joined domain server) into Azure Arc, we will utilize GPO. Before we can onboard new machines using this method, it is crucial to have the installer, _AzureConnectedMachineAgent.msi_, stored in a shared location that can be accessed by the target machines. This information is detailed in point 2, which specifies the requirement for a remote share to host the Windows Installer package. It is important to ensure that the Domain Controllers, Computers, and Admins all have change permissions for the network share. Once everything is properly set up, we can proceed to download the package and save it to the remote share. By utilizing this method, the onboarding process will automatically begin once the new GPO is applied.
+To integrate new internal servers (joined domain servers) into Azure Arc, we will utilize GPO method. Before we can onboard new machines using this method, it is crucial to have the installer, _AzureConnectedMachineAgent.msi_, stored in a shared location that can be accessed by the target machines. This information is detailed in point 2, which specifies the requirement for a remote share to host the Windows Installer package. It is important to ensure that the Domain Controllers, Computers, and Admins all have change permissions for the network share. Once everything is properly set up, we can proceed to download the package and save it to the remote share. By using this system, the onboarding process will automatically begin once the new GPO is applied.
 
 ![Add machine]({{site.baseurl}}/assets/img/Azure_Arc/add_machine_02.png)
 
@@ -107,7 +107,7 @@ The challenge at hand is that this particular secret is encrypted and cannot be 
 
 The secret is encrypted using DPAPI-NG, a security feature introduced by Microsoft in Windows 8 and Server 2012 R2. DPAPI-NG enhances the security framework, allowing for the secure sharing of secrets across different users and machines. This means that encrypted secrets with a user or computer account can be decrypted by another user. However, it's worth mentioning that DPAPI-NG decryption is limited to calls made through the MS-GKDI interface, which necessitates network access to a domain controller.
 
-The proof that this secret is encrypted with DPAPI-NG can be found in the _DeployGPO.ps1_ script. Specifically, the following line of code performs the encryption by calling the _ProtectBase64_ function, passing the _$descriptor_ and _$ServicePrincipalSecret_ as inputs. In this case, the descriptor is composed of the Domain Computer and the Domain Controller group SID. This means, as explained in the comments, that the _ServicePrincipalSecret_ can only be decrypted by the Domain Controllers and the Domain Computers security groups.
+The proof that this secret is encrypted with DPAPI-NG can be found in the _DeployGPO.ps1_ script. Specifically, the following line of code performs the encryption by calling the _ProtectBase64_ function, passing the _$descriptor_ and _$ServicePrincipalSecret_ as inputs. In this case, the descriptor is composed of the Domain Computer and the Domain Controller group SID. This means, as explained in the comments, <u>the _ServicePrincipalSecret_ can only be decrypted by the Domain Controllers and the Domain Computers security groups.</u>
 
 ```powershell
 # Encrypting the ServicePrincipalSecret to be decrypted only by the Domain Controllers and the Domain Computers security groups
@@ -118,7 +118,7 @@ Import-Module $PSScriptRoot\AzureArcDeployment.psm1
 $encryptedSecret = [DpapiNgUtil]::ProtectBase64($descriptor, $ServicePrincipalSecret)
 ```
 
-This poses a significant security risk if this script is not modified and left with its default settings. In this scenario, any machine account in the Domain Computers group can decrypt this secret. From an attack perspective, it is not very difficult to create a new machine account in a vulnerable environment, for example, through _machine account quota_ misconfiguration, and use it to decrypt the service principal secret.
+This poses a significant security risk if this script is not modified and left with its default settings. <u>In this scenario, any machine account in the Domain Computers group can decrypt this secret.</u> From an attack perspective, it is not very difficult to create a new machine account in a vulnerable environment, for example, through _machine account quota_ misconfiguration, and use it to decrypt the service principal secret.
 
 Indeed, upon inspecting the _EnableAzureArc.ps1_ script, it becomes apparent that the script leverages the _UnprotectBase64_ function for decrypting the secret. As this function is executed by the machine, it possesses the required privileges to successfully decrypt the secret.
 
@@ -158,7 +158,7 @@ At this stage, we need to authenticate using this account. We can either utilize
 
 ![rubeus]({{site.baseurl}}/assets/img/Azure_Arc/rubeus.png)
 
-By having the TGT for FAKE01 stored in memory, we can use the following script (_dec.ps1_) to decrypt the service principal secret.
+By having the TGT for _FAKE01_ stored in memory, we can use the following script (_dec.ps1_) to decrypt the service principal secret.
 
 ```powershell
 Import-Module .\AzureArcDeployment.psm1
@@ -171,7 +171,7 @@ $ebs
 
 ![dec]({{site.baseurl}}/assets/img/Azure_Arc/dec.png)
 
-At this point, we can gather the remaining information needed to connect to Azure from the _ArcInfo.json_ file, which is stored on the same network share as the _encryptedServicePrincipalSecret_ file. This file contains details such as: TenantId, servicePrincipalClientId, ResourceGroup, and more. With this information, we can use Azure CLI to authenticate as the compromised service principal and begin enumerating machines that are joined to Azure Arc.
+At this point, we can gather the remaining information needed to connect to Azure from the _ArcInfo.json_ file, which is stored on the same network share as the _encryptedServicePrincipalSecret_. This file contains details such as: TenantId, servicePrincipalClientId, ResourceGroup, and more. With this information, we can use Azure CLI to authenticate as the compromised service principal and begin enumerating machines that are connected to Azure Arc.
 
 ![shell01]({{site.baseurl}}/assets/img/Azure_Arc/shell_01.png)
 
@@ -183,6 +183,8 @@ In the example above, we got a reverse shell from a server we discovered, named 
 
 ![shell03]({{site.baseurl}}/assets/img/Azure_Arc/shell_04.png)
 
+We effectively transitioned from a domain user inside an Active Directory environment to the cloud. Due to the privileges of the service principal, we were able to compromise the rest of the machines in the internal infrastructure. Consequently, we are now moving back to the on-premises environment.
+
 ### Defenses and Remediations
 
-Azure Arc introduces a new potential vulnerability for malicious actors, enabling them to transition from on-premises environments to the cloud. It is crucial to thoroughly review any Microsoft deployment script before executing it in a production environment and network. Be mindful that if the deployment script uses the default configuration, any machine account in the Domain Computers group could access the service principal secret. To enhance security, we can create a dedicated group in Active Directory containing only the machines you plan to connect to Azure Arc. By incorporating this specific SID into the DeployGPO script, we can prevent unauthorized machine accounts from accessing the service principal secret, thereby reducing the risk of potential exploits. Additionally, it is important to limit the privileges of the service principal secret by following the principle of least privilege. This ensures that even if the secret is compromised, the attacker cannot run command to other Azure Arc joined VMs.
+Azure Arc introduces a new potential vulnerability for malicious actors, enabling them to transition from on-premises environments to the cloud. It is crucial to thoroughly review any Microsoft deployment script before executing it in a production environment. It is important to undestand that if the deployment script uses the default configuration, any machine account in the Domain Computers group could access the service principal secret. To enhance security, we can create a dedicated group in Active Directory containing only the machines we plan to connect to Azure Arc. By incorporating the specific SID of this group into the DeployGPO script, we can prevent unauthorized machine accounts from accessing the service principal secret, thereby reducing the risk of potential exploits. Additionally, it is important to limit the privileges of the service principal secret by following the principle of least privilege. This ensures that even if the secret is compromised, the attacker cannot run command to other Azure Arc joined VMs.
