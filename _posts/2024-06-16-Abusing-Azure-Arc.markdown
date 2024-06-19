@@ -31,7 +31,7 @@ Three choices exist for including a new machine. Our emphasis is on _Adding mult
 
 To integrate new internal servers (joined domain servers) into Azure Arc, we will utilize GPO method. Before we can onboard new machines using this method, it is crucial to have the installer, _AzureConnectedMachineAgent.msi_, stored in a shared location that can be accessed by the target machines. This information is detailed in point 2, which specifies the requirement for a remote share to host the Windows Installer package. It is important to ensure that the Domain Controllers, Computers, and Admins all have change permissions for the network share. Once everything is properly set up, we can proceed to download the package and save it to the remote share. By using this system, the onboarding process will automatically begin once the new GPO is applied.
 
-![Add machine 02]({{site.baseurl}}/assets/images/Azure_Arc/add_machine_02.png)
+![Add machine 02]({{site.baseurl}}/assets/images/Azure_Arc/add_machine_02.png){:style="display:block; margin-left:auto; margin-right:auto"}
 
 Furthermore, Microsoft provides a deployment toolkit that must be utilized to initiate the onboarding procedure.
 
