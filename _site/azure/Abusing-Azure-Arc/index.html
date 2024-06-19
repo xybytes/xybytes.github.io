@@ -1,0 +1,693 @@
+<!doctype html>
+<!--
+  Minimal Mistakes Jekyll Theme 4.24.0 by Michael Rose
+  Copyright 2013-2020 Michael Rose - mademistakes.com | @mmistakes
+  Free for personal and commercial use under the MIT license
+  https://github.com/mmistakes/minimal-mistakes/blob/master/LICENSE
+-->
+<html lang="en" class="no-js">
+  <head>
+    <meta charset="utf-8">
+
+<!-- begin _includes/seo.html --><title>Abusing Azure Arc: From Service Principal Exposed to Reverse Shell - XYBYTES</title>
+<meta name="description" content="Over the past year, I have been experimenting with Azure Arc service. I found it to be a fascinating service that combines and extends the internal and on-premises environments, merging them with the cloud. I believed it would be an intriguing service to explore from a security standpoint, and my intuition proved to be correct. I had the opportunity to present this new attack vector at Bsides Leeds 2024, and in this article, I will delve into greater detail on how these attacks are explored and can be utilized by malicious actors to transition from the on-premises environment to Azure, and subsequently compromise all the machines connected to Azure Arc.">
+
+
+  <meta name="author" content="CHRISTIAN BORTONE">
+  
+  <meta property="article:author" content="CHRISTIAN BORTONE">
+  
+
+
+<meta property="og:type" content="article">
+<meta property="og:locale" content="en_US">
+<meta property="og:site_name" content="XYBYTES">
+<meta property="og:title" content="Abusing Azure Arc: From Service Principal Exposed to Reverse Shell">
+<meta property="og:url" content="http://localhost:4000/azure/Abusing-Azure-Arc/">
+
+
+  <meta property="og:description" content="Over the past year, I have been experimenting with Azure Arc service. I found it to be a fascinating service that combines and extends the internal and on-premises environments, merging them with the cloud. I believed it would be an intriguing service to explore from a security standpoint, and my intuition proved to be correct. I had the opportunity to present this new attack vector at Bsides Leeds 2024, and in this article, I will delve into greater detail on how these attacks are explored and can be utilized by malicious actors to transition from the on-premises environment to Azure, and subsequently compromise all the machines connected to Azure Arc.">
+
+
+
+
+
+
+
+  <meta property="article:published_time" content="2024-06-16T11:32:20+01:00">
+
+
+
+
+
+  
+
+  
+
+
+<link rel="canonical" href="http://localhost:4000/azure/Abusing-Azure-Arc/">
+
+
+
+
+<script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    
+      "@type": "Person",
+      "name": "XYBYTES",
+      "url": "http://localhost:4000/"
+    
+  }
+</script>
+
+
+
+
+
+
+
+<!-- end _includes/seo.html -->
+
+
+
+  <link href="/feed.xml" type="application/atom+xml" rel="alternate" title="XYBYTES Feed">
+
+
+<!-- https://t.co/dKP3o1e -->
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="shortcut icon" href="/assets/images/favicon.ico" type="image/x-icon">
+<script>
+  document.documentElement.className = document.documentElement.className.replace(/\bno-js\b/g, '') + ' js ';
+</script>
+
+<!-- For all browsers -->
+<link rel="stylesheet" href="/assets/css/main.css">
+<link rel="preload" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5/css/all.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+<noscript><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5/css/all.min.css"></noscript>
+
+
+<title>Abusing Azure Arc: From Service Principal Exposed to Reverse Shell - XYBYTES</title>
+
+  <!-- Edit site and author settings in `_config.yml` to make the social details your own -->
+
+    <meta content="XYBYTES" property="og:site_name">
+  
+    <meta content="Abusing Azure Arc: From Service Principal Exposed to Reverse Shell" property="og:title">
+  
+  
+    <meta content="article" property="og:type">
+  
+  
+    <meta content="An amazing website." property="og:description">
+  
+  
+    <meta content="http://localhost:4000/azure/Abusing-Azure-Arc/" property="og:url">
+  
+  
+    <meta content="2024-06-16T11:32:20+01:00" property="article:published_time">
+    <meta content="http://localhost:4000/about/" property="article:author">
+  
+  
+    <meta content="http://localhost:4000/assets/images/" property="og:image">
+  
+
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:site" content="@">
+    <meta name="twitter:creator" content="@">
+  
+    <meta name="twitter:title" content="Abusing Azure Arc: From Service Principal Exposed to Reverse Shell">
+  
+  
+    <meta name="twitter:url" content="http://localhost:4000/azure/Abusing-Azure-Arc/">
+  
+  
+    <meta name="twitter:description" content="An amazing website.">
+  
+  
+    <meta name="twitter:image:src" content="http://localhost:4000/assets/images/">
+  
+
+	<meta name="description" content="">
+
+    <!-- start custom head snippets -->
+
+<!-- insert favicons. use https://realfavicongenerator.net/ -->
+
+<!-- end custom head snippets -->
+
+  </head>
+
+  <body class="layout--single">
+    <nav class="skip-links">
+  <ul>
+    <li><a href="#site-nav" class="screen-reader-shortcut">Skip to primary navigation</a></li>
+    <li><a href="#main" class="screen-reader-shortcut">Skip to content</a></li>
+    <li><a href="#footer" class="screen-reader-shortcut">Skip to footer</a></li>
+  </ul>
+</nav>
+
+    
+
+<div class="masthead">
+  <div class="masthead__inner-wrap">
+    <div class="masthead__menu">
+      <nav id="site-nav" class="greedy-nav">
+        
+          <a class="site-logo" href="/"><img src="/assets/images/favicon.ico" alt="XYBYTES"></a>
+        
+        <a class="site-title" href="/">
+          XYBYTES
+          
+        </a>
+        <ul class="visible-links"><li class="masthead__menu-item">
+              <a href="/about/">About</a>
+            </li><li class="masthead__menu-item">
+              <a href="/posts/">Posts</a>
+            </li><li class="masthead__menu-item">
+              <a href="/tags/">Tags</a>
+            </li></ul>
+        
+        <button class="search__toggle" type="button">
+          <span class="visually-hidden">Toggle search</span>
+          <i class="fas fa-search"></i>
+        </button>
+        
+        <button class="greedy-nav__toggle hidden" type="button">
+          <span class="visually-hidden">Toggle menu</span>
+          <div class="navicon"></div>
+        </button>
+        <ul class="hidden-links hidden"></ul>
+      </nav>
+    </div>
+  </div>
+</div>
+
+
+    <div class="initial-content">
+      
+
+
+
+
+
+<div id="main" role="main">
+  
+  <div class="sidebar sticky">
+  <center>
+  
+
+
+<div itemscope itemtype="https://schema.org/Person" class="h-card" style="margin-right: 0px;">
+
+  
+    <div class="author__avatar">
+      <a href="http://localhost:4000/">
+        <img src="/assets/images/christian-bortone.jpg" alt="CHRISTIAN BORTONE" itemprop="image" class="u-photo">
+      </a>
+    </div>
+  
+
+  <div class="author__content">
+    <h3 class="author__name p-name" itemprop="name">
+      <a class="u-url" rel="me" href="http://localhost:4000/" itemprop="url">CHRISTIAN BORTONE</a>
+    </h3>
+    
+      <div style="font-size: 20px !important;" class="author__bio p-note" itemprop="description">
+       <p>I am penetration tester and security researcher in my free time. I enjoy diving deep into Active Directory, Azure, and uncovering undocumented aspects of Microsoft technologies.</p>
+
+      </div>
+    
+  </div>
+
+  <div class="author__urls-wrapper">
+    <button class="btn btn--inverse">Follow</button>
+    <ul class="author__urls social-icons">
+      
+
+      
+        
+          
+            <li><a href="mailto:christianbortone@gmail.com" rel="nofollow noopener noreferrer me"><i class="fas fa-fw fa-envelope-square" aria-hidden="true"></i><span class="label">Email</span></a></li>
+          
+        
+          
+            <li><a href="https://twitter.com/xybytes" rel="nofollow noopener noreferrer me" itemprop="sameAs"><i class="fab fa-fw fa-twitter-square" aria-hidden="true"></i><span class="label">Twitter</span></a></li>
+          
+        
+          
+            <li><a href="https://in.linkedin.com/in/christianbortone" rel="nofollow noopener noreferrer me" itemprop="sameAs"><i class="fab fa-fw fa-linkedin" aria-hidden="true"></i><span class="label">LinkedIn</span></a></li>
+          
+        
+          
+            <li><a href="http://github.com/xybytes" rel="nofollow noopener noreferrer me" itemprop="sameAs"><i class="fab fa-fw fa-github" aria-hidden="true"></i><span class="label">GitHub</span></a></li>
+          
+        
+      
+
+      
+
+      
+
+      
+
+      
+
+      
+
+      
+
+      
+
+      
+
+      
+
+      
+
+      
+
+      
+
+      
+
+      
+
+      
+
+      
+
+      
+
+      
+
+      
+
+      
+
+      
+
+      
+
+      
+
+      
+
+      <!--
+  <li>
+    <a href="http://link-to-whatever-social-network.com/user/" itemprop="sameAs" rel="nofollow noopener noreferrer me">
+      <i class="fas fa-fw" aria-hidden="true"></i> Custom Social Profile Link
+    </a>
+  </li>
+-->
+    </ul>
+  </div>
+</div>
+
+</center>
+  
+  </div>
+
+
+
+  <article class="page h-entry" itemscope itemtype="https://schema.org/CreativeWork">
+    <meta itemprop="headline" content="Abusing Azure Arc: From Service Principal Exposed to Reverse Shell">
+    <meta itemprop="description" content="Over the past year, I have been experimenting with Azure Arc service. I found it to be a fascinating service that combines and extends the internal and on-premises environments, merging them with the cloud. I believed it would be an intriguing service to explore from a security standpoint, and my intuition proved to be correct. I had the opportunity to present this new attack vector at Bsides Leeds 2024, and in this article, I will delve into greater detail on how these attacks are explored and can be utilized by malicious actors to transition from the on-premises environment to Azure, and subsequently compromise all the machines connected to Azure Arc.">
+    <meta itemprop="datePublished" content="2024-06-16T11:32:20+01:00">
+    
+
+    <div class="page__inner-wrap">
+      
+        <header>
+          <h1 id="page-title" class="page__title p-name" itemprop="headline">
+            <a href="http://localhost:4000/azure/Abusing-Azure-Arc/" class="u-url" itemprop="url">Abusing Azure Arc: From Service Principal Exposed to Reverse Shell
+</a>
+          </h1>
+          
+
+  <p class="page__meta">
+    
+
+    
+
+    
+      
+      
+
+      <span class="page__meta-readtime">
+        <i class="far fa-clock" aria-hidden="true"></i>
+        
+          7 minute read
+        
+        
+        <p> <strong>Date Uploaded:</strong> June 16th, 2024</p>
+      </span>
+    
+  </p>
+
+
+        </header>
+      
+
+      <section class="page__content e-content" itemprop="text">
+        
+        <p>Over the past year, I have been experimenting with Azure Arc service. I found it to be a fascinating service that combines and extends the internal and on-premises environments, merging them with the cloud. I believed it would be an intriguing service to explore from a security standpoint, and my intuition proved to be correct. I had the opportunity to present this new attack vector at Bsides Leeds 2024, and in this article, I will delve into greater detail on how these attacks are explored and can be utilized by malicious actors to transition from the on-premises environment to Azure, and subsequently compromise all the machines connected to Azure Arc.</p>
+
+<h2 id="what-is-azure-arc">What is Azure Arc?</h2>
+
+<p>Azure Arc is an innovative hybrid cloud platform that empowers users to control and monitor a wide range of servers and databases. This includes traditional Linux and Windows servers located on-premises environment, databases and virtual machines operating in different public clouds. Azure Arc uses Azure’s built-in functionalities to easily manage resources in different locations from a central control point.</p>
+
+<p><img src="/assets/images/Azure_Arc/azure_arc_overview.png" alt="Azure Arc Overview" /></p>
+
+<p>To onboard a new machine in Azure Arc, it’s essential to create a new service principal. This service principal will serve as the authentication entity for connecting to Azure and adding the machine to Azure Arc. Following this, you should at least assign the Azure Connected Machine Onboarding role to the service principal.</p>
+
+<p><img src="/assets/images/Azure_Arc/sp_01.png" alt="SP_01" /></p>
+
+<p>In this scenario, suppose the system administrator lacks expertise and is about to assign the roles of Azure Connected Machine Onboarding and Azure Connected Machine Resource Administrator.</p>
+
+<p><img src="/assets/images/Azure_Arc/sp_roles.png" alt="SP Role" /></p>
+
+<h2 id="add-servers-with-azure-arc">Add Servers with Azure Arc</h2>
+
+<p>Three choices exist for including a new machine. Our emphasis is on Adding multiple servers.</p>
+
+<p><img src="/assets/images/Azure_Arc/add_machine_01.png" alt="Add machine" /></p>
+
+<p>To integrate a new internal server (a joined domain server) into Azure Arc, we will utilize Group Policy Objects (GPO). Before we can onboard a new machine using Group Policy Object (GPO), it is crucial to have the installer, AzureConnectedMachineAgent.msi, stored in a shared location that can be accessed by the target machines. This information is detailed in point 2, which specifies the requirement for a remote share to host the Windows Installer package. It is important to ensure that the Domain Controllers, Computers, and Admins all have change permissions for the network share. Once everything is properly set up, we can proceed to download the package and save it to the remote share.</p>
+
+<p><img src="/assets/images/Azure_Arc/add_machine_02.png" alt="Add machine" /></p>
+
+<p>Simplifying the process, Microsoft offers a deployment toolkit.</p>
+
+<p><img src="/assets/images/Azure_Arc/deploy_github_kit.png" alt="Add machine" /></p>
+
+<p>Within the ArcEnableServerGroupPolicy zip file, we’ll discover the script DeployGPO.ps1, EnableAzureArc.ps1 and AzureArcDeployment.psm1</p>
+
+<h3 id="deploygpops1">DeployGPO.ps1</h3>
+
+<p>This script needs to be executed in a Domain Controller and makes the following actions:</p>
+
+<ol>
+  <li>Deploys the Azure Arc Servers Onboarding GPO in the local domain</li>
+  <li>Copies the EnableAzureArc.ps1 onboarding script to the network Share</li>
+</ol>
+
+<p>When we run this script, we pass two main parameters: <code class="language-plaintext highlighter-rouge">ServicePrincipalId</code> and <code class="language-plaintext highlighter-rouge">ServicePrincipalClientSecret</code>. Additionally, we provide other parameters such as the domain (e.g., <code class="language-plaintext highlighter-rouge">xybytes.com</code>), the server where the share is stored (e.g., <code class="language-plaintext highlighter-rouge">dc01.xybytes.com</code>), and the name of the share (<code class="language-plaintext highlighter-rouge">ArcOnboardShare</code> in this case). We also include further details like the tenant ID, resource group, and other necessary information.</p>
+
+<div class="language-powershell highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ServicePrincipalId</span><span class="o">=</span><span class="s2">"5bc8bc98-6307-407b-adde-07a3425b90d7"</span><span class="p">;</span><span class="w">
+</span><span class="nv">$ServicePrincipalClientSecret</span><span class="o">=</span><span class="s2">"eGm8Q~6ujDQiVh7LKaKsvmM2Cph73eqLL38lRdlm"</span><span class="p">;</span><span class="w">
+
+</span><span class="o">.</span><span class="n">\DeployGPO.ps1</span><span class="w"> </span><span class="nt">-DomainFQDN</span><span class="w"> </span><span class="nx">xybytes.com</span><span class="w"> </span><span class="nt">-ReportServerFQDN</span><span class="w"> </span><span class="s2">"dc01.xybytes.com"</span><span class="w"> </span><span class="nt">-ArcRemoteShare</span><span class="w"> </span><span class="nx">ArcOnboardShare</span><span class="w"> </span><span class="nt">-ServicePrincipalSecret</span><span class="w"> </span><span class="nv">$ServicePrincipalClientSecret</span><span class="w"> </span><span class="nt">-ServicePrincipalClientId</span><span class="w"> </span><span class="nv">$ServicePrincipalId</span><span class="w"> </span><span class="nt">-SubscriptionId</span><span class="w"> </span><span class="p">[</span><span class="o">...</span><span class="p">]</span><span class="w"> </span><span class="nt">-ResourceGroup</span><span class="w"> </span><span class="nx">AzureArcLAB</span><span class="w"> </span><span class="nt">-Location</span><span class="w"> </span><span class="nx">westeurope</span><span class="w"> </span><span class="nt">-TenantId</span><span class="w"> </span><span class="p">[</span><span class="o">...</span><span class="p">]</span><span class="w">
+</span></code></pre></div></div>
+
+<p>Now we can check the GPO created in the AD environment. When this GPO is applied, the machines will automatically start the onboarding process to Azure Arc.</p>
+
+<p><img src="/assets/images/Azure_Arc/GPO_created.png" alt="GPO" /></p>
+
+<h3 id="enableazurearcps1">EnableAzureArc.ps1</h3>
+
+<p>During the onboarding process, this script is executed by the machines and performs the following validation checks:</p>
+
+<ol>
+  <li>Checks if the machine is an Azure VM or a non-Azure machine.</li>
+  <li>Checks the Framework version.</li>
+  <li>Checks the PowerShell version.</li>
+</ol>
+
+<p>If the server doesn’t meet the requirements, all the information from the server, such as OS, Framework version, PowerShell version, VM type, etc., is stored in a network share for further analysis.</p>
+
+<p>If the server meets the requirements, the script proceeds as follows:</p>
+
+<ol>
+  <li>Checks if the Azure Hybrid Instance Metadata Service is already installed.</li>
+  <li>If not installed:
+    <ul>
+      <li>Installs the Connected Machine agent on the machine.</li>
+      <li>Connects the server to Azure Arc using a Service Principal.</li>
+      <li>Tags the Azure Arc server with a given tag.</li>
+    </ul>
+  </li>
+  <li>Logs any connection errors and the agent code.</li>
+  <li>Checks the <code class="language-plaintext highlighter-rouge">azcmagent.exe</code> version and updates the agent if a new version is found in the network folder.</li>
+  <li>Verifies the connection status.</li>
+  <li>If the server is disconnected, logs the last errors from the <code class="language-plaintext highlighter-rouge">azcmagent.exe</code> agent to the shared folder.</li>
+</ol>
+
+<h3 id="azurearcdeploymentpsm1">AzureArcDeployment.psm1</h3>
+
+<p>Wrapper for DPAPI-NG features</p>
+
+<div class="language-powershell highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">Add-Type</span><span class="w"> </span><span class="nt">-TypeDefinition</span><span class="w"> </span><span class="sh">@"
+using System;
+using System.Runtime.InteropServices;
+using System.Security.Cryptography;
+using System.Text;
+public static class DpapiNgUtil
+{
+public static string ProtectBase64(string protectionDescriptor, string input)
+{
+byte[] output = Protect(protectionDescriptor, Encoding.UTF8.GetBytes(input));
+return Convert.ToBase64String(output);
+}
+public static string UnprotectBase64(string input)
+[...]
+</span></code></pre></div></div>
+
+<h2 id="where-is-the-secret-stored-and-how-is-it-protected">Where is the secret stored, and how is it protected?</h2>
+
+<p>While experimenting with Azure Arc, I kept wondering about the location of the service principal secret. Machines joining Azure must be authenticated to the cloud, requiring access to the service principal secret. After some searching, I discovered that the secret was stored in a file within the network shared directory named <code class="language-plaintext highlighter-rouge">AzureArcDeploy</code>.</p>
+
+<p><img src="/assets/images/Azure_Arc/encrypted_SP_00.png" alt="enc_sp_00" /></p>
+
+<p>The challenge at hand is that this particular secret is encrypted and cannot be decrypted by a regular user.</p>
+
+<p><img src="/assets/images/Azure_Arc/encrypted_SP_01.png" alt="enc_sp_01" /></p>
+
+<p>The secret is encrypted using DPAPI-NG, a security feature introduced by Microsoft in Windows 8 and Server 2012 R2. DPAPI-NG enhances the security framework, allowing for the secure sharing of secrets across different users and machines. This means that encrypted secrets can be decrypted by another user or machine. However, it’s worth mentioning that DPAPI-NG decryption is limited to calls made through the MS-GKDI interface, which necessitates network access to a domain controller.</p>
+
+<p>The proof that this secret was encrypted with DPAPI-NG can be found in the <code class="language-plaintext highlighter-rouge">DeployGPO.ps1</code> script. Specifically, the following line of code performs the encryption by calling the <code class="language-plaintext highlighter-rouge">ProtectBase64</code> function, passing the <code class="language-plaintext highlighter-rouge">$descriptor</code> and <code class="language-plaintext highlighter-rouge">$ServicePrincipalSecret</code> as inputs. In this case, the descriptor is composed of the domain computer SID and the Domain Controller group SID. This means, as explained in the comments, that the <code class="language-plaintext highlighter-rouge">ServicePrincipalSecret</code> can only be decrypted by the Domain Controllers and the Domain Computers security groups.</p>
+
+<div class="language-powershell highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># Encrypting the ServicePrincipalSecret to be decrypted only by the Domain Controllers and the Domain Computers security groups</span><span class="w">
+</span><span class="nv">$DomainComputersSID</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"SID="</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="nv">$DomainComputersSID</span><span class="w">
+</span><span class="nv">$DomainControllersSID</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"SID="</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="nv">$DomainControllersSID</span><span class="w">
+</span><span class="nv">$descriptor</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">@(</span><span class="nv">$DomainComputersSID</span><span class="p">,</span><span class="w"> </span><span class="nv">$DomainControllersSID</span><span class="p">)</span><span class="w"> </span><span class="o">-join</span><span class="w"> </span><span class="s2">" OR "</span><span class="w">
+</span><span class="n">Import-Module</span><span class="w"> </span><span class="bp">$PSScriptRoot</span><span class="nx">\AzureArcDeployment.psm1</span><span class="w">
+</span><span class="nv">$encryptedSecret</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="n">DpapiNgUtil</span><span class="p">]::</span><span class="n">ProtectBase64</span><span class="p">(</span><span class="nv">$descriptor</span><span class="p">,</span><span class="w"> </span><span class="nv">$ServicePrincipalSecret</span><span class="p">)</span><span class="w">
+</span></code></pre></div></div>
+
+<p>This poses a significant security risk if this script is not modified and left with its default settings. In this scenario, any machine account in the Domain Computers group can decrypt this secret. From an attack perspective, it is not very difficult to create a new machine account in a vulnerable environment, for example, through machine account quota misconfiguration, and use it to decrypt the service principal secret.</p>
+
+<p>Indeed, upon inspecting the EnableAzureArc.ps1 script, it becomes apparent that the script leverages the <code class="language-plaintext highlighter-rouge">UnprotectBase64</code> function for decrypting the secret. As this function is executed by the machine, it possesses the required privileges to successfully decrypt the secret.</p>
+
+<div class="language-powershell highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kr">Function</span><span class="w"> </span><span class="nf">Get-ServicePrincipalSecret</span><span class="w"> </span><span class="p">{</span><span class="w">
+</span><span class="kr">try</span><span class="w"> </span><span class="p">{</span><span class="w">
+</span><span class="n">Copy-Item</span><span class="w"> </span><span class="p">(</span><span class="n">Join-Path</span><span class="w"> </span><span class="nv">$SourceFilesFullPath</span><span class="w"> </span><span class="s2">"AzureArcDeployment.psm1"</span><span class="p">)</span><span class="w"> </span><span class="nv">$workfolder</span><span class="w"> </span><span class="nt">-Force</span><span class="w">
+</span><span class="n">Import-Module</span><span class="w"> </span><span class="p">(</span><span class="n">Join-Path</span><span class="w"> </span><span class="nv">$workfolder</span><span class="w"> </span><span class="s2">"AzureArcDeployment.psm1"</span><span class="p">)</span><span class="w">
+</span><span class="nv">$encryptedSecret</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">Get-Content</span><span class="w"> </span><span class="p">(</span><span class="n">Join-Path</span><span class="w"> </span><span class="nv">$SourceFilesFullPath</span><span class="w"> </span><span class="nx">encryptedServicePrincipalSecret</span><span class="p">)</span><span class="w">
+</span><span class="nv">$sps</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="n">DpapiNgUtil</span><span class="p">]::</span><span class="n">UnprotectBase64</span><span class="p">(</span><span class="nv">$encryptedSecret</span><span class="p">)</span><span class="w">
+</span><span class="n">Remove-Item</span><span class="w"> </span><span class="p">(</span><span class="n">Join-Path</span><span class="w"> </span><span class="nv">$workfolder</span><span class="w"> </span><span class="s2">"AzureArcDeployment.psm1"</span><span class="p">)</span><span class="w"> </span><span class="nt">-Force</span><span class="w">
+</span><span class="p">}</span><span class="w">
+</span><span class="kr">catch</span><span class="w"> </span><span class="p">{</span><span class="w">
+</span><span class="n">Write-Log</span><span class="w"> </span><span class="nt">-msg</span><span class="w"> </span><span class="s2">"Could not fetch service principal secret: </span><span class="si">$(</span><span class="bp">$_</span><span class="o">.</span><span class="nf">Exception</span><span class="si">)</span><span class="s2">"</span><span class="w"> </span><span class="nt">-msgtype</span><span class="w"> </span><span class="nx">ERROR</span><span class="w">
+</span><span class="kr">return</span><span class="w"> </span><span class="bp">$false</span><span class="w">
+</span><span class="p">}</span><span class="w">
+</span><span class="kr">return</span><span class="w"> </span><span class="nv">$sps</span><span class="w">
+</span></code></pre></div></div>
+
+<h2 id="lets-exploit-it">Let’s Exploit It!</h2>
+
+<p>We assum the perspective of an attacker:</p>
+
+<ol>
+  <li>We have successfully penetrated the internal network.</li>
+  <li>We have taken control of the user account xybytes\chris within Active Directory.</li>
+  <li>We have discovered a network share containing the AzureArcDeploy directory.</li>
+</ol>
+
+<p>In order to ensure that the machine account quota is set to its default configuration, our priority is to verify if a regular user can create up to 10 machine accounts. These accounts will be located within the domain computers group.</p>
+
+<p><img src="/assets/images/Azure_Arc/machine_accout_quote.png" alt="machine account quote" /></p>
+
+<p>We can now improt pwoermand to create a new machine account fake01</p>
+
+<p><img src="/assets/images/Azure_Arc/powermad.png" alt="powermad" /></p>
+
+<p>At this stage, authentication is required for this account. You can utilize <code class="language-plaintext highlighter-rouge">runas.exe</code> command with the <code class="language-plaintext highlighter-rouge">netonly</code> flag or proceed with the pass-the-ticket option using <code class="language-plaintext highlighter-rouge">Rubeus</code>. Let’s proceed with the latter choice.</p>
+
+<p><img src="/assets/images/Azure_Arc/rubeus.png" alt="rubeus" /></p>
+
+<p>By having the TGT for FAKE01 stored in memory, we can use the following script (<code class="language-plaintext highlighter-rouge">dec.ps1</code>) to decrypt the Service principal secret.</p>
+
+<div class="language-powershell highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">Import-Module</span><span class="w"> </span><span class="o">.</span><span class="nx">\AzureArcDeployment.psm1</span><span class="w">
+
+</span><span class="nv">$encryptedSecret</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">Get-Content</span><span class="w"> </span><span class="s2">"\\dc01\ArcOnboardShare\AzureArcDeploy\encryptedServicePrincipalSecret"</span><span class="w">
+
+</span><span class="nv">$ebs</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="n">DpapiNgUtil</span><span class="p">]::</span><span class="n">UnprotectBase64</span><span class="p">(</span><span class="nv">$encryptedSecret</span><span class="p">)</span><span class="w">
+</span><span class="nv">$ebs</span><span class="w">
+</span></code></pre></div></div>
+
+<p><img src="/assets/images/Azure_Arc/dec.png" alt="dec" /></p>
+
+<p>At this point, we can gather the remaining information needed to connect to Azure from the ArcInfo.json file, which is stored on the same network share as the encryptedServicePrincipalSecret file. This file contains essential details such as TenantId, servicePrincipalClientId, ResourceGroup, and more. With this information, we can use the Azure CLI to authenticate as the service principal and begin enumerating machines that are joined to Azure Arc.</p>
+
+<p><img src="/assets/images/Azure_Arc/shell_01.png" alt="shell01" /></p>
+
+<p>In the example above, we attempted to obtain a reverse shell from a server we discovered, named server01, using a base64-encoded PowerShell reverse shell.</p>
+
+<p><img src="/assets/images/Azure_Arc/shell_02.png" alt="shell02" /></p>
+
+<p><img src="/assets/images/Azure_Arc/shell_03.png" alt="shell02" /></p>
+
+<p><img src="/assets/images/Azure_Arc/shell_04.png" alt="shell03" /></p>
+
+<h3 id="defenses-and-remediations">Defenses and Remediations</h3>
+
+<p>Azure Arc introduces a new potential vulnerability for hackers, enabling them to transition from on-premises environments to the cloud. It is crucial to thoroughly review any Microsoft deployment script before executing it in a production environment and network. Be mindful that if the deployment script uses the default configuration, any machine account in Domain Computers group could access the service principal secret. To enhance security, create a dedicated group in Active Directory containing only the machines you plan to connect to Azure Arc. By incorporating this specific SID into the DeployGPO script, you can prevent unauthorized machine accounts from accessing the service principal secret, thereby reducing the risk of potential exploits. Additionally, it is important to limit the privileges of the service principal secret by following the principle of least privilege. This ensures that even if the secret is compromised, the attacker cannot move laterally into the cloud.</p>
+
+        
+      </section>
+
+      <footer class="page__meta">
+        
+        
+  
+
+
+  
+
+  <p class="page__taxonomy">
+    <strong><i class="fas fa-fw fa-tags" aria-hidden="true"></i> Tags: </strong>
+    <span itemprop="keywords">
+    
+      <a href="/tags/#azure" class="page__taxonomy-item p-category" rel="tag">Azure</a>
+    
+    </span>
+  </p>
+
+
+
+
+  
+
+
+  
+
+  <p class="page__taxonomy">
+    <strong><i class="fas fa-fw fa-folder-open" aria-hidden="true"></i> Categories: </strong>
+    <span itemprop="keywords">
+    
+      <a href="/categories/#azure" class="page__taxonomy-item p-category" rel="tag">Azure</a>
+    
+    </span>
+  </p>
+
+
+        
+
+  <p class="page__date"><strong><i class="fas fa-fw fa-calendar-alt" aria-hidden="true"></i> Updated:</strong> <time class="dt-published" datetime="2024-06-16T11:32:20+01:00">June 16, 2024</time></p>
+
+      </footer>
+
+      <section class="page__share">
+  
+    <h4 class="page__share-title">Share on</h4>
+  
+
+  <a href="https://twitter.com/intent/tweet?text=Abusing+Azure+Arc%3A+From+Service+Principal+Exposed+to+Reverse+Shell%20http%3A%2F%2Flocalhost%3A4000%2Fazure%2FAbusing-Azure-Arc%2F" class="btn btn--twitter" onclick="window.open(this.href, 'window', 'left=20,top=20,width=500,height=500,toolbar=1,resizable=0'); return false;" title="Share on Twitter"><i class="fab fa-fw fa-twitter" aria-hidden="true"></i><span> Twitter</span></a>
+
+  <a href="https://www.facebook.com/sharer/sharer.php?u=http%3A%2F%2Flocalhost%3A4000%2Fazure%2FAbusing-Azure-Arc%2F" class="btn btn--facebook" onclick="window.open(this.href, 'window', 'left=20,top=20,width=500,height=500,toolbar=1,resizable=0'); return false;" title="Share on Facebook"><i class="fab fa-fw fa-facebook" aria-hidden="true"></i><span> Facebook</span></a>
+
+  <a href="https://www.linkedin.com/shareArticle?mini=true&url=http%3A%2F%2Flocalhost%3A4000%2Fazure%2FAbusing-Azure-Arc%2F" class="btn btn--linkedin" onclick="window.open(this.href, 'window', 'left=20,top=20,width=500,height=500,toolbar=1,resizable=0'); return false;" title="Share on LinkedIn"><i class="fab fa-fw fa-linkedin" aria-hidden="true"></i><span> LinkedIn</span></a>
+</section>
+
+
+      
+    </div>
+
+    
+  </article>
+
+  
+  
+    <div class="page__related">
+      <h2 class="page__related-title">You may also enjoy</h2>
+      <div class="grid__wrapper">
+        
+          
+            
+      </div>
+    </div>
+  
+</div>
+
+    </div>
+
+    
+      <div class="search-content">
+        <div class="search-content__inner-wrap"><form class="search-content__form" onkeydown="return event.key != 'Enter';" role="search">
+    <label class="sr-only" for="search">
+      Enter your search term...
+    </label>
+    <input type="search" id="search" class="search-input" tabindex="-1" placeholder="Enter your search term..." />
+  </form>
+  <div id="results" class="results"></div></div>
+
+      </div>
+    
+
+    <div id="footer" class="page__footer">
+      <footer>
+        <!-- start custom footer snippets -->
+
+<!-- end custom footer snippets -->
+        <div class="page__footer-follow">
+  <ul class="social-icons">
+    
+      <li><strong>Follow:</strong></li>
+    
+
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+
+    
+      <li><a href="/feed.xml"><i class="fas fa-fw fa-rss-square" aria-hidden="true"></i> Feed</a></li>
+    
+  </ul>
+</div>
+
+<div class="page__footer-copyright">&copy; 2024 XYBYTES. Powered by <a href="https://jekyllrb.com" rel="nofollow">Jekyll</a> &amp; <a href="https://mademistakes.com/work/minimal-mistakes-jekyll-theme/" rel="nofollow">Minimal Mistakes</a>.</div>
+
+      </footer>
+    </div>
+
+    
+  <script src="/assets/js/main.min.js"></script>
+
+
+
+
+<script src="/assets/js/lunr/lunr.min.js"></script>
+<script src="/assets/js/lunr/lunr-store.js"></script>
+<script src="/assets/js/lunr/lunr-en.js"></script>
+
+
+
+
+
+
+
+  </body>
+</html>
