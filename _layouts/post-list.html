@@ -1,0 +1,32 @@
+---
+layout: archive
+---
+
+{{ content }}
+
+{% if paginator %}
+  {% assign posts = paginator.posts %}
+{% else %}
+  {% assign posts = site.posts %}
+{% endif %}
+
+{% assign entries_layout = page.entries_layout | default: 'list' %}
+
+{% assign posts_by_year = posts | group_by_exp: "post", "post.date | date: '%Y'" %}
+
+<div class="entries-{{ entries_layout }}">
+  {% for year in posts_by_year %}
+    <h2>{{ year.name }}</h2> <!-- Display the year -->
+    <div class="year-group">
+      {% for post in year.items %}
+        <article class="post">
+          <h2><a href="{{ site.baseurl }}{{ post.url }}">{{ post.title }}</a></h2>
+          <p style="font-size: 0.75em;">{{ post.content | strip_html | truncatewords: 25 }}</p> <!-- Truncate the content to 100 words -->
+          <a href="{{ site.baseurl }}{{ post.url }}">Read more</a>
+        </article>
+      {% endfor %}
+    </div>
+  {% endfor %}
+</div>
+
+{% include paginator.html %}
