@@ -13,29 +13,29 @@ Over the past year, I have been experimenting with Azure Arc service. I found it
 
 Azure Arc is an innovative hybrid cloud platform that empowers users to control and monitor a wide range of servers and databases. This includes traditional Linux and Windows servers located on-premises environment, databases and virtual machines operating in different public clouds. Azure Arc uses Azure's built-in functionalities to easily manage resources in different locations from a central control point.
 
-![Azure Arc Overview]({{site.baseurl}}/assets/img/Azure_Arc/azure_arc_overview.png)
+![Azure Arc Overview]({{site.baseurl}}/assets/images/Azure_Arc/azure_arc_overview.png)
 
 To onboard a new machine in Azure Arc, we must generate a new service principal. This service principal will serve as the authentication entity, allowing the machine to connect to Azure and be enrolled in Azure Arc. Ensure the service principal is assigned at least the _Azure Connected Machine Onboarding_ role.
 
-![SP_01]({{site.baseurl}}/assets/img/Azure_Arc/sp_01.png)
+![SP_01]({{site.baseurl}}/assets/images/Azure_Arc/sp_01.png)
 
 In this case, we assume that the system administrators are not following the principle of least privilege as they have assigned the roles of _Azure Connected Machine Onboarding_ and _Azure Connected Machine Resource Administrator_ to the service principal.
 
-![SP Role]({{site.baseurl}}/assets/img/Azure_Arc/sp_roles.png)
+![SP Role]({{site.baseurl}}/assets/images/Azure_Arc/sp_roles.png)
 
 ## Add Servers with Azure Arc
 
 Three choices exist for including a new machine. Our emphasis is on _Adding multiple servers_.
 
-![Add machine]({{site.baseurl}}/assets/img/Azure_Arc/add_machine_01.png)
+![Add machine 01]({{site.baseurl}}/assets/images/Azure_Arc/add_machine_01.png)
 
 To integrate new internal servers (joined domain servers) into Azure Arc, we will utilize GPO method. Before we can onboard new machines using this method, it is crucial to have the installer, _AzureConnectedMachineAgent.msi_, stored in a shared location that can be accessed by the target machines. This information is detailed in point 2, which specifies the requirement for a remote share to host the Windows Installer package. It is important to ensure that the Domain Controllers, Computers, and Admins all have change permissions for the network share. Once everything is properly set up, we can proceed to download the package and save it to the remote share. By using this system, the onboarding process will automatically begin once the new GPO is applied.
 
-![Add machine]({{site.baseurl}}/assets/img/Azure_Arc/add_machine_02.png)
+![Add machine 02]({{site.baseurl}}/assets/images/Azure_Arc/add_machine_02.png)
 
 Furthermore, Microsoft provides a deployment toolkit that must be utilized to initiate the onboarding procedure.
 
-![Add machine]({{site.baseurl}}/assets/img/Azure_Arc/deploy_github_kit.png)
+![Deploy tool kit]({{site.baseurl}}/assets/images/Azure_Arc/deploy_github_kit.png)
 
 Inside the _ArcEnableServerGroupPolicy.zip_ file, we will find the following scripts: _DeployGPO.ps1_, _EnableAzureArc.ps1_, and _AzureArcDeployment.psm1_.
 
@@ -57,7 +57,7 @@ $ServicePrincipalClientSecret="eGm8Q~6ujDQiVh7LKaKsvmM2Cph73eqLL38lRdlm";
 
 After running the script, we can verify the GPO created in the Active Directory environment. Once this GPO is applied, the machines will automatically initiate the onboarding process to Azure Arc.
 
-![GPO]({{site.baseurl}}/assets/img/Azure_Arc/GPO_created.png)
+![GPO]({{site.baseurl}}/assets/images/Azure_Arc/GPO_created.png)
 
 ### EnableAzureArc.ps1
 
@@ -102,11 +102,11 @@ public static string UnprotectBase64(string input)
 
 While experimenting with Azure Arc, I was curious about the location of the service principal secret. Since machines joining Azure must authenticate to the cloud, they require access to this secret. After some investigation, I found that the secret is stored in a file within the network shared directory named `AzureArcDeploy`.
 
-![enc_sp_00]({{site.baseurl}}/assets/img/Azure_Arc/encrypted_SP_00.png)
+![enc_sp_00]({{site.baseurl}}/assets/images/Azure_Arc/encrypted_SP_00.png)
 
 The challenge at hand is that this particular secret is encrypted and cannot be decrypted by a regular user.
 
-![enc_sp_01]({{site.baseurl}}/assets/img/Azure_Arc/encrypted_SP_01.png)
+![enc_sp_01]({{site.baseurl}}/assets/images/Azure_Arc/encrypted_SP_01.png)
 
 The secret is encrypted using DPAPI-NG, a security feature introduced by Microsoft in Windows 8 and Server 2012 R2. DPAPI-NG enhances the security framework, allowing for the secure sharing of secrets across different users and machines. This means that encrypted secrets with a user or computer account can be decrypted by another user. However, it's worth mentioning that DPAPI-NG decryption is limited to calls made through the MS-GKDI interface, which necessitates network access to a domain controller.
 
@@ -151,15 +151,15 @@ We assume the perspective of an attacker:
 
 In order to ensure that the _machine account quota_ is set to its default configuration, our priority is to verify if a regular user can create up to 10 machine accounts.
 
-![machine account quote]({{site.baseurl}}/assets/img/Azure_Arc/machine_accout_quote.png)
+![machine account quote]({{site.baseurl}}/assets/images/Azure_Arc/machine_accout_quote.png)
 
 We can now import _powermad.ps1_ to create a new machine account _fake01_.
 
-![powermad]({{site.baseurl}}/assets/img/Azure_Arc/powermad.png)
+![powermad]({{site.baseurl}}/assets/images/Azure_Arc/powermad.png)
 
 At this stage, we need to authenticate using this account. We can either utilize the _runas.exe_ command with the _netonly_ flag or opt for the pass-the-ticket method using _Rubeus.exe_. Let's proceed with the latter option.
 
-![rubeus]({{site.baseurl}}/assets/img/Azure_Arc/rubeus.png)
+![rubeus]({{site.baseurl}}/assets/images/Azure_Arc/rubeus.png)
 
 By having the TGT for _FAKE01_ stored in memory, we can use the following script (_dec.ps1_) to decrypt the service principal secret.
 
@@ -172,19 +172,19 @@ $ebs = [DpapiNgUtil]::UnprotectBase64($encryptedSecret)
 $ebs
 ```
 
-![dec]({{site.baseurl}}/assets/img/Azure_Arc/dec.png)
+![dec]({{site.baseurl}}/assets/images/Azure_Arc/dec.png)
 
 At this point, we can gather the remaining information needed to connect to Azure from the _ArcInfo.json_ file, which is stored on the same network share as the _encryptedServicePrincipalSecret_. This file contains details such as: TenantId, servicePrincipalClientId, ResourceGroup, and more. With this information, we can use Azure CLI to authenticate as the compromised service principal and begin enumerating machines that are connected to Azure Arc.
 
-![shell01]({{site.baseurl}}/assets/img/Azure_Arc/shell_01.png)
+![shell01]({{site.baseurl}}/assets/images/Azure_Arc/shell_01.png)
 
 In the example above, we got a reverse shell from a server we discovered, named _server01_, using a base64-encoded PowerShell reverse shell.
 
-![shell02]({{site.baseurl}}/assets/img/Azure_Arc/shell_02.png)
+![shell02]({{site.baseurl}}/assets/images/Azure_Arc/shell_02.png)
 
-![shell02]({{site.baseurl}}/assets/img/Azure_Arc/shell_03.png)
+![shell02]({{site.baseurl}}/assets/images/Azure_Arc/shell_03.png)
 
-![shell03]({{site.baseurl}}/assets/img/Azure_Arc/shell_04.png)
+![shell03]({{site.baseurl}}/assets/images/Azure_Arc/shell_04.png)
 
 We effectively transitioned from a domain user inside an Active Directory environment to the cloud. Due to the privileges of the service principal, we were able to compromise the rest of the machines in the internal infrastructure. Consequently, we are now moving back to the on-premises environment.
 
