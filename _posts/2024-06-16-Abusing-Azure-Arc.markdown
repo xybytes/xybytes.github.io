@@ -35,7 +35,7 @@ To integrate new internal servers (joined domain servers) into Azure Arc, we wil
 
 Furthermore, Microsoft provides a deployment toolkit that must be utilized to initiate the onboarding procedure.
 
-![Deploy tool kit]({{site.baseurl}}/assets/images/Azure_Arc/deploy_github_kit.png)
+![Deploy tool kit]({{site.baseurl}}/assets/images/Azure_Arc/deploy_github_kit.png){:style="display:block; margin-left:auto; margin-right:auto"}
 
 Inside the _ArcEnableServerGroupPolicy.zip_ file, we will find the following scripts: _DeployGPO.ps1_, _EnableAzureArc.ps1_, and _AzureArcDeployment.psm1_.
 
@@ -102,7 +102,7 @@ public static string UnprotectBase64(string input)
 
 While experimenting with Azure Arc, I was curious about the location of the service principal secret. Since machines joining Azure must authenticate to the cloud, they require access to this secret. After some investigation, I found that the secret is stored in a file within the network shared directory named `AzureArcDeploy`.
 
-![enc_sp_00]({{site.baseurl}}/assets/images/Azure_Arc/encrypted_SP_00.png)
+![enc_sp_00]({{site.baseurl}}/assets/images/Azure_Arc/encrypted_SP_00.png){:style="display:block; margin-left:auto; margin-right:auto"}
 
 The challenge at hand is that this particular secret is encrypted and cannot be decrypted by a regular user.
 
@@ -159,7 +159,7 @@ We can now import _powermad.ps1_ to create a new machine account _fake01_.
 
 At this stage, we need to authenticate using this account. We can either utilize the _runas.exe_ command with the _netonly_ flag or opt for the pass-the-ticket method using _Rubeus.exe_. Let's proceed with the latter option.
 
-![rubeus]({{site.baseurl}}/assets/images/Azure_Arc/rubeus.png)
+![rubeus]({{site.baseurl}}/assets/images/Azure_Arc/rubeus.png){:style="display:block; margin-left:auto; margin-right:auto"}
 
 By having the TGT for _FAKE01_ stored in memory, we can use the following script (_dec.ps1_) to decrypt the service principal secret.
 
@@ -172,7 +172,7 @@ $ebs = [DpapiNgUtil]::UnprotectBase64($encryptedSecret)
 $ebs
 ```
 
-![dec]({{site.baseurl}}/assets/images/Azure_Arc/dec.png)
+![dec]({{site.baseurl}}/assets/images/Azure_Arc/dec.png){:style="display:block; margin-left:auto; margin-right:auto"}
 
 At this point, we can gather the remaining information needed to connect to Azure from the _ArcInfo.json_ file, which is stored on the same network share as the _encryptedServicePrincipalSecret_. This file contains details such as: TenantId, servicePrincipalClientId, ResourceGroup, and more. With this information, we can use Azure CLI to authenticate as the compromised service principal and begin enumerating machines that are connected to Azure Arc.
 
