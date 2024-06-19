@@ -1,7 +1,10 @@
 ---
-layout: post
 title: "Abusing Azure Arc: From Service Principal Exposed to Reverse Shell"
 date: 2024-06-16 13:32:20 +0300
+tags:
+  - Azure
+categories:
+  - Azure
 ---
 
 Over the past year, I have been experimenting with Azure Arc service. I found it to be a fascinating service that combines and extends the internal and on-premises environments, merging them with the cloud. I believed it would be an intriguing service to explore from a security standpoint, and my intuition proved to be correct. I had the opportunity to present this new attack vector at Bsides Leeds 2024, and in this article, I will delve into greater detail on how this miscofiguration can be utilized by malicious actors to transition from the on-premises environment to Azure, and subsequently compromise all the machines connected to Azure Arc.
