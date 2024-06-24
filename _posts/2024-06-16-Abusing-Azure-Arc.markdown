@@ -7,7 +7,7 @@ categories:
   - Azure
 ---
 
-Over the past year, I have been experimenting with Azure Arc service. I found it to be a fascinating service that combines and extends the internal and on-premises environments, merging them with the cloud. I believed it would be an intriguing service to explore from a security standpoint, and my intuition proved to be correct. I had the opportunity to present this new attack vector at Bsides Leeds 2024, and in this article, I will delve into greater detail on how this miscofiguration can be utilized by malicious actors to transition from the on-premises environment to Azure, and subsequently compromise all the machines connected to Azure Arc.
+Over the past year, I have explored the capabilities of Azure Arc, a service that intriguingly integrates and extends on-premises environments with cloud infrastructure. Recognizing its potential from a security perspective, I delved deeper into its vulnerabilities. My findings culminated in a presentation on a new attack vector at Bsides Leeds 2024. In this article, I will provide a comprehensive analysis of how certain misconfigurations could be exploited by malicious actors to move from an on-premises environment to Azure, thereby putting all machines linked to Azure Arc at risk.
 
 ## What is Azure Arc?
 
@@ -110,7 +110,7 @@ The challenge at hand is that this particular secret is encrypted and cannot be 
 
 The secret is encrypted using DPAPI-NG, a security feature introduced by Microsoft in Windows 8 and Server 2012 R2. DPAPI-NG enhances the security framework, allowing for the secure sharing of secrets across different users and machines. This means that encrypted secrets with a user or computer account can be decrypted by another user. However, it's worth mentioning that DPAPI-NG decryption is limited to calls made through the MS-GKDI interface, which necessitates network access to a domain controller.
 
-The proof that this secret is encrypted with DPAPI-NG can be found in the _DeployGPO.ps1_ script. Specifically, the following line of code performs the encryption by calling the _ProtectBase64_ function, passing the _$descriptor_ and _$ServicePrincipalSecret_ as inputs. In this case, the descriptor is composed of the Domain Computer and the Domain Controller group SID. This means, as explained in the comments, <u>the _ServicePrincipalSecret_ can only be decrypted by the Domain Controllers and the Domain Computers security groups.</u>
+The proof that this secret is encrypted with DPAPI-NG can be found in the _DeployGPO.ps1_ script. Specifically, the following line of code performs the encryption by calling the _ProtectBase64_ function, passing the _$descriptor_ and _$ServicePrincipalSecret_ as inputs. In this case, the descriptor is composed of the Domain Computer and the Domain Controller group SID. This means, as explained in the comments, <u>the ServicePrincipalSecret can only be decrypted by the Domain Controllers and the Domain Computers security groups.</u>
 
 ```powershell
 # Encrypting the ServicePrincipalSecret to be decrypted only by the Domain Controllers and the Domain Computers security groups
