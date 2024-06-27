@@ -43,7 +43,7 @@ Inside the _ArcEnableServerGroupPolicy.zip_ file, we will find the following scr
 - _EnableAzureArc.ps1_
 - _AzureArcDeployment.psm1_
 
-#### DeployGPO.ps1
+**DeployGPO.ps1**
 
 This script needs to be executed on a Domain Controller and performs the following actions:
 
@@ -63,7 +63,7 @@ After running the script, we can verify the GPO created in the Active Directory 
 
 ![GPO]({{site.baseurl}}/assets/images/Azure_Arc/GPO_created.png)
 
-#### EnableAzureArc.ps1
+**EnableAzureArc.ps1**
 
 During the onboarding process, this script is executed by machines and performs the following validation checks:
 
@@ -81,7 +81,7 @@ If the server fails to meet the specified requirements, all pertinent details, i
 3. Logs any connection errors and the agent code.
 4. Verifies the connection status.
 
-#### AzureArcDeployment.psm1
+**AzureArcDeployment.psm1**
 
 It serves as a wrapper for DPAPI-NG.
 
@@ -208,6 +208,5 @@ Using this technique, we transitioned from a domain user within an Active Direct
 ### Defenses and Remediations
 
 Azure Arc introduces a new potential miscofiguration for malicious actors, enabling them to transition from on-premises environments to the cloud. It is crucial to review any Microsoft scripts before executing them in a production environment. It is important to undestand that if the deployment script uses the default configuration, any machine account in the Domain Computers group could access the service principal secret. To improve security, we can create a dedicated group in Active Directory containing only the machines we plan to connect to Azure Arc. By incorporating the specific SID of this group into _DeployGPO.ps1_ we can prevent unauthorized machine accounts from accessing the service principal secret, thereby reducing the risk of potential exploits. Additionally, it is important to limit the privileges of the service principal secret by following the principle of least privilege. This ensures that even if the secret is compromised, the attacker cannot run command to other Azure Arc joined VMs.
-
 
 ![sp 01]({{site.baseurl}}/assets/images/Azure_Arc/sp_01.png)
