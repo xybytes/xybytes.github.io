@@ -19,6 +19,8 @@ To onboard a new machine in Azure Arc, we must generate a new service principal.
 
 ![SP_01]({{site.baseurl}}/assets/images/Azure_Arc/sp_01.png)
 
+![SP_01]({{site.baseurl}}/assets/images/Azure_Arc/sp_01.png)
+
 In this case, we assume that the system administrators are not following the principle of least privilege as they have assigned the roles of _Azure Connected Machine Onboarding_ and _Azure Connected Machine Resource Administrator_ to the service principal.
 
 ![SP Role]({{site.baseurl}}/assets/images/Azure_Arc/sp_roles.png)
