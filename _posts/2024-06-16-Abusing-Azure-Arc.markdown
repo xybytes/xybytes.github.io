@@ -7,11 +7,11 @@ categories:
   - Azure
 ---
 
-Over the past year, I have explored the capabilities of Azure Arc, a service that intriguingly integrates and extends on-premises environments with cloud infrastructure. Recognizing its potential from a security perspective, I delved deeper into its vulnerabilities. My findings culminated in a presentation on a new attack vector at Bsides Leeds 2024. In this article, I will provide a comprehensive analysis of how certain a misconfiguration could be exploited by malicious actors to move from an on-premises environment to Azure, thereby putting all machines linked to Azure Arc at risk.
+Over the past year, I have explored the capabilities of Azure Arc, a service that intriguingly integrates and extends on-premises environments with cloud infrastructure. Seeing its potential, I decided to dig deeper into how it works and its vulnerabilities. My findings culminated in a presentation on a new attack vector at Bsides Leeds 2024. In this article, I will provide a detailed analysis of how a specific misconfiguration could be exploited by malicious actors to transition from an on-premises environment to Azure, putting all machines connected to Azure Arc at risk.
 
 ## What is Azure Arc?
 
-Azure Arc is an innovative hybrid cloud platform that empowers users to control and monitor a wide range of servers and databases. This includes traditional Linux and Windows servers located on-premises environment, databases and virtual machines operating in different public clouds. Azure Arc uses Azure's built-in functionalities to easily manage resources in different locations from a central control point.
+Azure Arc is an innovative hybrid cloud platform that enables users to control and monitor a wide range of servers and databases. This includes traditional Linux and Windows servers in on-premises environments, as well as databases and virtual machines operating in various public clouds. Azure Arc leverages Azure’s built-in functionalities, making it easy to manage resources in different places from one central spot.
 
 ![Azure Arc Overview]({{site.baseurl}}/assets/images/Azure_Arc/azure_arc_overview.png)
 
@@ -19,7 +19,7 @@ To onboard a new machine in Azure Arc, we must generate a new service principal.
 
 ![Service Account]({{site.baseurl}}/assets/images/Azure_Arc/sp_01.png)
 
-In this case, we assume that the system administrators are not following the principle of least privilege as they have assigned the roles of _Azure Connected Machine Onboarding_ and _Azure Connected Machine Resource Administrator_ to the service principal.
+In this case, we assume that system administrators are not following the principle of least privilege as they have assigned the roles of _Azure Connected Machine Onboarding_ and _Azure Connected Machine Resource Administrator_ to the service principal.
 
 ![SP Role]({{site.baseurl}}/assets/images/Azure_Arc/sp_roles.png)
 
@@ -29,7 +29,7 @@ Three choices exist for including a new machine. Our emphasis is on _Adding mult
 
 ![Add machine 01]({{site.baseurl}}/assets/images/Azure_Arc/add_machine_01.png)
 
-To integrate new internal servers (joined domain servers) into Azure Arc, we will utilize GPO method. Before we can onboard new machines using this method, it is crucial to have the installer, _AzureConnectedMachineAgent.msi_, stored in a shared location that can be accessed by the target machines. It is important to ensure that the Domain Controllers, Computers, and Admins all have change permissions for the network share. Once everything is properly set up, we can proceed to download the package and save it to the remote share. By using this system, the onboarding process will automatically begin once the new GPO is applied.
+To integrate new internal servers (joined domain servers) into Azure Arc, we will utilize GPO method. Before we can onboard new machines using this method, it is crucial to have the installer, _AzureConnectedMachineAgent.msi_, stored in a shared location that can be accessed by the target machines. It is important to ensure that the Domain Controllers, Computers, and Admins all have change permissions for this network share. Once everything is properly set up, we can proceed to download the package and move it into the share. By using this system, the onboarding process will automatically begin once the new GPO is applied.
 
 ![Add machine 02]({{site.baseurl}}/assets/images/Azure_Arc/add_machine_02.png){:style="display:block; margin-left:auto; margin-right:auto"}
 
@@ -208,5 +208,3 @@ Using this technique, we transitioned from a domain user within an Active Direct
 ### Defenses and Remediations
 
 Azure Arc introduces a new potential miscofiguration for malicious actors, enabling them to transition from on-premises environments to the cloud. It is crucial to review any Microsoft scripts before executing them in a production environment. It is important to undestand that if the deployment script uses the default configuration, any machine account in the Domain Computers group could access the service principal secret. To improve security, we can create a dedicated group in Active Directory containing only the machines we plan to connect to Azure Arc. By incorporating the specific SID of this group into _DeployGPO.ps1_ we can prevent unauthorized machine accounts from accessing the service principal secret, thereby reducing the risk of potential exploits. Additionally, it is important to limit the privileges of the service principal secret by following the principle of least privilege. This ensures that even if the secret is compromised, the attacker cannot run command to other Azure Arc joined VMs.
-
-![sp 01]({{site.baseurl}}/assets/images/Azure_Arc/sp_01.png)
