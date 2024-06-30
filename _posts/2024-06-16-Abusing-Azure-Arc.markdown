@@ -29,7 +29,7 @@ Three choices exist for including a new machine. Our emphasis is on _Adding mult
 
 ![Add machine 01]({{site.baseurl}}/assets/images/Azure_Arc/add_machine_01.png)
 
-To integrate new internal servers (joined domain servers) into Azure Arc, we will utilize GPO method. Before we can onboard new machines using this method, it is crucial to have the installer, _AzureConnectedMachineAgent.msi_, stored in a shared location that can be accessed by the target machines. It is important to ensure that the Domain Controllers, Computers, and Admins all have change permissions for this network share. Once everything is properly set up, we can proceed to download the package and move it into the share. By using this system, the onboarding process will automatically begin once the new GPO is applied.
+To integrate new internal servers (joined domain servers) into Azure Arc, we will utilize GPO method. Before we can onboard new machines using this method, it is crucial to have the installer, _AzureConnectedMachineAgent.msi_, stored in a shared location that can be accessed by the target machines. It is important to ensure that the Domain Controllers, Computers, and Admins all have change permissions for this network share. By using this system, the onboarding process will automatically begin once the new GPO is applied.
 
 ![Add machine 02]({{site.baseurl}}/assets/images/Azure_Arc/add_machine_02.png){:style="display:block; margin-left:auto; margin-right:auto"}
 
@@ -165,7 +165,7 @@ At this stage, we need to authenticate using this account. We can either utilize
 
 ![rubeus]({{site.baseurl}}/assets/images/Azure_Arc/rubeus.png){:style="display:block; margin-left:auto; margin-right:auto"}
 
-By having the TGT for _FAKE01_ stored in memory, we can use the following script (_dec.ps1_) to decrypt the service principal secret. Alternatively, we can use other open-source modules such as [SecretManagement.DpapiNG](https://github.com/jborean93/SecretManagement.DpapiNG).
+By having the TGT for _FAKE01_ stored in memory, we can use the following PowerShell script to decrypt the service principal secret. Alternatively, we can use other open-source modules such as [SecretManagement.DpapiNG](https://github.com/jborean93/SecretManagement.DpapiNG).
 
 ```powershell
 Import-Module .\AzureArcDeployment.psm1
@@ -178,7 +178,7 @@ $ebs
 
 ![dec]({{site.baseurl}}/assets/images/Azure_Arc/dec.png){:style="display:block; margin-left:auto; margin-right:auto"}
 
-At this point, we can gather the remaining information needed to connect to Azure from the _ArcInfo.json_ file, which is stored on the same network share as the _encryptedServicePrincipalSecret_. This file contains details such as: _TenantId_, _servicePrincipalClientId_, _ResourceGroup_, and more.
+At this point, we can gather the remaining information needed to connect to Azure from the _ArcInfo.json_ file, which is stored on the same network share as the _encryptedServicePrincipalSecret_. This file contains details such as: _TenantId_, _servicePrincipalClientId_, _ResourceGroup_ and more.
 
 ```json
 {
@@ -203,7 +203,7 @@ In the example above, we obtained a reverse shell from a server connected to Azu
 
 ![shell03]({{site.baseurl}}/assets/images/Azure_Arc/shell_04.png)
 
-Using this technique, we transitioned from a domain user within an Active Directory environment to Azure. By leveraging the privileges of the service principal, we compromised the remaining machines in the internal infrastructure, successfully returning to the on-premises environment.
+Using this technique, we transitioned from a domain computer account within an Active Directory environment to Azure. By leveraging the privileges of the service principal, we compromised the remaining machines in the internal infrastructure, successfully returning to the on-premises environment.
 
 ### Defenses and Remediations
 
