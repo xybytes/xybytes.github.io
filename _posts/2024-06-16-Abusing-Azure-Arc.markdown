@@ -7,11 +7,11 @@ categories:
   - Azure
 ---
 
-Over the past year, I have explored the capabilities of Azure Arc, a service that intriguingly integrates and extends on-premises environments with cloud infrastructure. Seeing its potential, I decided to dig deeper into how it works and its vulnerabilities. My findings culminated in a presentation on a new attack vector at Bsides Leeds 2024. In this article, I will provide a detailed analysis of how a specific misconfiguration could be exploited by malicious actors to transition from an on-premises environment to Azure, putting all machines connected to Azure Arc at risk.
+Over the past year, I have explored the capabilities of Azure Arc, a service that integrates and extends on-premises environments with cloud infrastructure. Recognizing its potential, I decided to explore its functionality further from a security perspective. My findings culminated in a presentation on a new attack vector at Bsides Leeds 2024. In this article, I will provide a detailed analysis of how a specific misconfiguration could be exploited by malicious actors to transition from an on-premises environment to Azure, putting all machines connected to Azure Arc at risk.
 
 ## What is Azure Arc?
 
-Azure Arc is an innovative hybrid cloud platform that enables users to control and monitor a wide range of servers and databases. This includes traditional Linux and Windows servers in on-premises environments, as well as databases and virtual machines operating in various public clouds. Azure Arc leverages Azure’s built-in functionalities, making it easy to manage resources in different places from one central spot.
+Azure Arc is an innovative hybrid cloud platform that enables users to control and monitor a wide range of servers and databases. This includes traditional Linux and Windows servers in on-premises environments, as well as databases and virtual machines operating in various public clouds. Azure Arc leverages Azure’s built-in functionalities, making it easy to manage resources in different places.
 
 ![Azure Arc Overview]({{site.baseurl}}/assets/images/Azure_Arc/azure_arc_overview.png)
 
@@ -25,7 +25,7 @@ In this case, we assume that system administrators are not following the princip
 
 ## Add Servers with Azure Arc
 
-Three choices exist for including a new machine. Our emphasis is on _Adding multiple servers_.
+Three choices exist for including a new machine. In our case we will proceed with the option _Adding multiple servers_.
 
 ![Add machine 01]({{site.baseurl}}/assets/images/Azure_Arc/add_machine_01.png)
 
@@ -37,7 +37,7 @@ Furthermore, Microsoft provides a deployment toolkit that must be used to initia
 
 ![Deploy tool kit]({{site.baseurl}}/assets/images/Azure_Arc/deploy_github_kit.png){:style="display:block; margin-left:auto; margin-right:auto"}
 
-Inside the _ArcEnableServerGroupPolicy.zip_ file, we will find the following scripts:
+The _ArcEnableServerGroupPolicy.zip_ file contains the following scripts:
 
 - _DeployGPO.ps1_
 - _EnableAzureArc.ps1_
