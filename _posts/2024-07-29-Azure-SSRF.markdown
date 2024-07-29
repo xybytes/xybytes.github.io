@@ -2,12 +2,10 @@
 title: "Exploiting SNI SSRF to access Azure Identity Management Service"
 date: 2024-07-29 01:00:00 +0300
 tags:
-  - Azure
+  - Azure,SSRF,SNI,Proxy,Metadata
 categories:
   - Azure
 ---
-
-## Introduction
 
 Server-side request forgery (SSRF) is a well-known vulnerability that has gained renewed attention in recent years, particularly in cloud environments. Hackers and penetration testers have increasingly focused on exploiting this vulnerability to access sensitive information. Initially, SSRF was used to access the metadata of Amazon EC2 instances, providing valuable details about the instance. In response to widespread exploitation, Amazon implemented new security mechanisms. The metadata endpoint, accessible from within any EC2 machine at http://169.254.169.254, offers various data about the instance.There are two versions of the metadata endpoint. The first version (IMDSv1) allows access via GET requests, making it vulnerable to SSRF attacks. The second version (IMDSv2) introduces additional security measures by requiring a token, obtained through a PUT request with a specific HTTP header, to access the metadata. This added complexity makes it more challenging to exploit the endpoint through SSRF. In a recent presentation at BSides Leeds 2024, Oliver Morton demonstrated how a misconfigured SNI proxy could be exploited to bypass the protections of the AWS IMDSv2 service. Inspired by his presentation, I decided to explore the same concept with Azure VM metadata to assess whether this could pose a potential security risk in Azure. The extreme flexibility of SNI, along with the ability to craft specific headers in requests and change request methods, makes this an intriguing area for further investigation.
 
@@ -23,7 +21,7 @@ To allow clients to connect securely to an SSL/TLS-enabled website, a central en
 
 The SNI proxy could have a misconfiguration that allows a potential attacker to control requests using the SNI field. In other words, an attacker could manipulate the SNI field to send a request to an arbitrary host, bypassing intended restrictions. In the case of Azure Identity Management, this vulnerability could be exploited to trick the proxy into sending a request to itself, enabling the attacker to extract the access token from the instance metadata.
 
-![azure_ssrf_02]({{site.baseurl}}/assets/images/Azure_SSRF/sni_proxy_exploit.png)
+![azure_ssrf_02]({{site.baseurl}}/assets/images/Azure_SSRF/sni_proxy_exploit.png){:style="display:block; margin-left:auto; margin-right:auto"}
 
 This is the vulnerable Nginx proxy configuration that could lead to issues, making the proxy susceptible to SNI-based SSRF attacks:
 
@@ -141,4 +139,4 @@ Address: 169.254.169.254
 
 In this scenario, we can use our malicious domain and include the necessary `Metadata:true` header in the request.
 
-![azure_ssrf_03]({{site.baseurl}}/assets/images/Azure_SSRF/exploit_azure_ssrf.png)
+![azure_ssrf_03]({{site.baseurl}}/assets/images/Azure_SSRF/exploit_azure_ssrf.png){:width="100%"}
