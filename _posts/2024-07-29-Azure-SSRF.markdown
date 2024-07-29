@@ -139,4 +139,8 @@ Address: 169.254.169.254
 
 In this scenario, we can use our malicious domain and include the necessary `Metadata:true` header in the request.
 
-![azure_ssrf_03]({{site.baseurl}}/assets/images/Azure_SSRF/exploit_azure_ssrf.png){:width="100%"}
+![azure_ssrf_03]({{site.baseurl}}/assets/images/Azure_SSRF/exploit_azure_ssrf.png){:width="200%"}
+
+## Mitigations
+
+In this post, we demonstrate how a misconfigured proxy could potentially be utilized to exploit SSRF in Azure Virtual Machine, allowing an attacker to obtain an access token for malicious activities within the Azure environment. It is important to note that vulnerable SNI proxies are more versatile than typical SSRF vulnerabilities, making it possible to bypass the secure by design protection for Azure IMDS. By forcing the proxy to send a valid request, an attacker can acquire a valid JWT token for the server. Additionally, emphasizing the significance of logging, including the requesting IP address of the user in web access logs and as an X-Forwarded-For HTTP request header in the onward URL request is crucial. While the target server may not immediately act on this information, preserving this trace can aid in forensic investigations.
