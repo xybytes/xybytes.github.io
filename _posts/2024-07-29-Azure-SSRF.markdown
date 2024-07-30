@@ -139,7 +139,7 @@ Address: 169.254.169.254
 
 In this scenario, we can use our malicious domain and include the necessary `Metadata:true` header in the request.
 
-![azure_ssrf_03]({{site.baseurl}}/assets/images/Azure_SSRF/exploit_azure_ssrf.png){: style="width:400px;height:400px;" }
+![azure_ssrf_03]({{site.baseurl}}/assets/images/Azure_SSRF/exploit_azure_ssrf.png)
 
 ## Mitigations
 
