@@ -1,5 +1,5 @@
 ---
-title: "Exploiting SNI SSRF to Access Azure Identity Management Service"
+title: "Exploiting SNI SSRF to Access Azure Instance Metadata Service"
 date: 2024-07-29 01:00:00 +0300
 tags:
   - Azure,SSRF,SNI,Proxy,Metadata
@@ -19,7 +19,7 @@ To allow clients to connect securely to an SSL/TLS-enabled website, a central en
 
 ![azure_ssrf_01]({{site.baseurl}}/assets/images/Azure_SSRF/sni_proxy.png)
 
-The SNI proxy could have a misconfiguration that allows a potential attacker to control requests using the SNI field. In other words, an attacker could manipulate the SNI field to send a request to an arbitrary host, bypassing intended restrictions. In the case of Azure Identity Management, this vulnerability could be exploited to trick the proxy into sending a request to itself, enabling the attacker to extract the access token from the instance metadata.
+The SNI proxy could have a misconfiguration that allows a potential attacker to control requests using the SNI field. In other words, an attacker could manipulate the SNI field to send a request to an arbitrary host, bypassing intended restrictions. In the case of Azure IMDS, this vulnerability could be exploited to trick the proxy into sending a request to itself, enabling the attacker to extract the access token from the instance metadata.
 
 ![azure_ssrf_02]({{site.baseurl}}/assets/images/Azure_SSRF/sni_proxy_exploit.png){:style="display:block; margin-left:auto; margin-right:auto"}
 
@@ -108,7 +108,7 @@ As Oliver explained in his presentation, several requirements need to be met for
 4. The SNI proxy must route subsequent requests to the same Azure VM instance.
 5. The SNI proxy must not perform sufficient validation of the SNI field.
 6. The SNI field "must" contain a domain name.
-7. The SNI proxy must terminate TLS, as the Azure Identity managed service does not accept TLS connections.
+7. The SNI proxy must terminate TLS, as the Azure Instance Metadata Service does not accept TLS connections.
 8. The SNI proxy must be configured to connect to port 80 upstream.
 
 ## Azure Instance Metadata Service
