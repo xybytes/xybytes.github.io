@@ -54,5 +54,7 @@
  
 
     {% if post.excerpt %}<p class="archive__item-excerpt" itemprop="description">{{ post.excerpt | markdownify | strip_html | truncatewords: 25 }}</p>{% endif %}
+
+    <p>{{ post.excerpt }}</p>
   </article>
 </div>
