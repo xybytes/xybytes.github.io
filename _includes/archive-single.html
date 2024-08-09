@@ -10,6 +10,8 @@
   {% assign title = post.title %}
 {% endif %}
 
+{% assign words = post.content | number_of_words %}
+
 <div class="{{ include.type | default: "list" }}__item">
   <article class="archive__item" itemscope itemtype="http://schema.org/CreativeWork">
     {% if include.type == "grid" and teaser %}
@@ -48,6 +50,6 @@
       </p>
  
 
-    {% if post.excerpt %}<p class="archive__item-excerpt" itemprop="description">{{ post.excerpt | markdownify | strip_html | truncatewords: 250 }}</p>{% endif %}
+    {% if post.excerpt %}<p class="archive__item-excerpt" itemprop="description">{{ post.excerpt | markdownify | strip_html | truncatewords: 25 }}</p>{% endif %}
   </article>
 </div>
