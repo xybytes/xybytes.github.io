@@ -7,7 +7,7 @@ categories:
   - Azure
 ---
 
-Over the past year, I have explored the capabilities of Azure Arc, a service that integrates and extends on-premises environments with cloud infrastructure. Recognizing its potential, I decided to explore its functionality further from a security perspective. My findings culminated in a presentation on a new attack vector at Bsides Leeds 2024. In this article, I will provide a detailed analysis of how a specific misconfiguration could be exploited by malicious actors to transition from an on-premises environment to Azure, putting all machines connected to Azure Arc at risk.
+Over the past year, I have explored the capabilities of Azure Arc, a service that integrates and extends on-premises environments with cloud infrastructure. Recognizing its potential, I decided to explore its functionality further from a security perspective. My findings culminated in a presentation on a new attack vector at [Bsides Leeds 2024]("https://youtu.be/KtRYn5GA4iU?si=98rgNn3bkEP24-Wm"). In this article, I will provide a detailed analysis of how a specific misconfiguration could be exploited by malicious actors to transition from an on-premises environment to Azure, putting all machines connected to Azure Arc at risk.
 
 ## What is Azure Arc?
 
