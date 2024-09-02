@@ -9,7 +9,7 @@ categories:
 
 Web Application Firewalls (WAFs) are critical components in securing web applications, acting as the first line of defense by filtering and monitoring incoming web traffic to protect against a wide range of threats, including SQL injection, cross-site scripting, and other attacks targeting application vulnerabilities. WAFs examine HTTP requests, block malicious traffic, and allow legitimate requests to pass through, ensuring that applications remain secure and available to legitimate users. Azure, like many other cloud providers, offers a robust WAF feature integrated within its Application Gateway. This service allows clients to easily deploy a WAF in front of their applications, providing advanced protection against malicious payloads, unauthorized access, and other potentially harmful traffic. In addition to filtering malicious traffic, Azure’s WAF supports various monitoring and logging features that help clients maintain visibility over their web application’s security posture.
 
-## Setting Up the Azure WAF
+## Setting Up Azure WAF
 
 Configuring the WAF in the Azure portal is a straightforward process. To demonstrate the WAF's capabilities, I first needed a web application vulnerable to DOM XSS. Here's the example I used as vulnerable web application:
 
@@ -25,7 +25,7 @@ Configuring the WAF in the Azure portal is a straightforward process. To demonst
 
 ![azure_waf_01]({{site.baseurl}}/assets/images/Azure_WAF/reflected.png){:style="display:block; margin-left:auto; margin-right:auto"}
 
-To speed up the process, I decided to use Azure Static Web Apps. As the next step, I created an Azure Application Gateway and configured the backend pool to point to the static web app. I also assigned a public IP address to the gateway and set up a Virtual Network (VNet). Once these initial configurations were in place, I proceeded to create a WAF policy. .
+To speed up the process, I chose to use Azure Static Web Apps. Next, I set up an Azure Application Gateway and configured its backend pool to point to the static web app. I also assigned a public IP address to the gateway and created a Virtual Network. Additionally, I added a DNS record for this public IP under `azurecloud.pro` to simplify management. With these initial configurations complete, I proceeded to create a WAF policy.
 
 ![azure_waf_02]({{site.baseurl}}/assets/images/Azure_WAF/resource_group.png){:style="display:block; margin-left:auto; margin-right:auto"}
 
@@ -33,13 +33,13 @@ Under the managed rules, I enabled the OWASP_3.2 rule set, which is a pre-config
 
 ![azure_waf_03]({{site.baseurl}}/assets/images/Azure_WAF/owasp_rule.png){:style="display:block; margin-left:auto; margin-right:auto"}
 
-## Explore Azure WAF
+## Bypass Azure WAF
 
 The first step is to evaluate which types of payloads the firewall blocks and how it responds to these malicious inputs. To do this, I attempted various ways to trigger the WAF, and it wasn’t very difficult. As demonstrated above, when inserting payloads like `<script>alert(1)</script>` or `<img src=0 onerror=alert(1)>`, the response from the firewall is a "403 Forbidden" error.
 
 ![azure_waf_04]({{site.baseurl}}/assets/images/Azure_WAF/waf_block.png){:style="display:block; margin-left:auto; margin-right:auto"}
 
-Conducting a manual investigation is neither a convenient nor an efficient approach in this case. Due to the vast number of potential tags and events, testing every possible permutation and combination of payloads to identify edge cases that are not covered by the WAF proved to be nearly impossible. Therefore, I decided to change my strategy and move towards an automated process.
+Conducting a manual investigation is neither a convenient nor an efficient approach in this case. Due to the vast number of potential tags and events, testing every possible permutation and combination of payloads to identify edge cases that are not covered by the WAF proved to be a challenge. Therefore, I decided to change my strategy and move towards an automated process.
 
 Given the abundance of open-source tools available on GitHub, I didn't want to reinvent the wheel. Instead, I conducted some research to find a tool suitable for this purpose. After some searching, I discovered **DOMscan**.
 
