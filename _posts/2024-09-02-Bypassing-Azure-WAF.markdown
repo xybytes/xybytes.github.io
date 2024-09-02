@@ -1,6 +1,6 @@
 ---
 title: "Bypassing Azure WAF"
-date: 2024-09-03 01:00:00 +0300
+date: 2024-09-02 01:00:00 +0300
 tags:
   - Azure,WAF,XSS
 categories:
