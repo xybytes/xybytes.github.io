@@ -73,8 +73,4 @@ In the end the follow payload where found to be able to bypass Azure WAF.
 
 <img src="{{site.baseurl}}/assets/images/Azure_WAF/alert_xss.gif">
 
-
-![Alert XSS]({{site.baseurl}}/assets/images/Azure_WAF/xss_alert.png)
-
-
 These payloads successfully bypassed the WAF’s defenses and triggered an alert box, confirming our proof of concept. In a real-world scenario, this vulnerability could allow attackers to inject malicious scripts into a vulnerable application, potentially compromising sensitive user data and the overall system integrity. This finding is particularly significant because not all cloud providers are willing to address such vulnerabilities. For instance, while the Microsoft Security Response Center acknowledged that my report contained valuable information, they determined that it did not meet their criteria for a security vulnerability requiring remediation. Therefore, organizations should not rely solely on default, out-of-the-box solutions. They must continually test and adapt their security controls to keep pace with evolving threats.
