@@ -13,7 +13,7 @@ Azure Application Proxy offers a groundbreaking solution for remote users needin
 
 The diagram below showcases the overall structure and function of the Azure application proxy at a high level. Let’s explore how it operates.
 
-![screenshot](/assets/images/Azure_Application_Proxy_Hijacking/Azure_App_Proxy_Intro.png)
+![screenshot]({{site.baseurl}}/assets/images/Azure_Application_Proxy_Hijacking/Azure_App_Proxy_Intro.png)
 
 1. User accesses an application via an endpoint and is redirected to a cloud-based authentication service's sign-in page.
 2. Upon successful sign-in, the authentication service issues a token to the user's device.
@@ -26,28 +26,28 @@ The diagram below showcases the overall structure and function of the Azure appl
 
 Before delving into the details of a new attack technique that enables a malicious attacker to reroute the traffic of an application proxy to a harmful website, it's essential to understand the configuration process of this system. Let's begin by exploring how to set up Azure Application Proxy, laying the groundwork for a deeper understanding of its potential vulnerability. To set up an Application Proxy connector, the first step is to sign in to the Azure portal. Here, you can download the necessary installation package. Throughout the installation, you'll be asked to log in with your Azure AD account, which is a crucial step for initiating the service.
 
-![screenshot](/assets/images/Azure_Application_Proxy_Hijacking/Download_Connector.png)
+![screenshot]({{site.baseurl}}/assets/images/Azure_Application_Proxy_Hijacking/Download_Connector.png)
 
 <div align="center">
-    <img src="/assets/img/Azure_Application_Proxy_Hijacking/Connector_Installation_01.png" />
-    <img src="/assets/img/Azure_Application_Proxy_Hijacking/Connector_Installation_02.png" />
+    <img src="/assets/images/Azure_Application_Proxy_Hijacking/Connector_Installation_01.png" />
+    <img src="/assets/images/Azure_Application_Proxy_Hijacking/Connector_Installation_02.png" />
 </div>
 
 Once the installation is complete, a brief waiting period is required. After this, simply refresh your list of connectors and you should see your hostname appear, indicating a successful setup. The connector will be listed under _Connectors_ in the Azure Application Proxy section.
 
-![screenshot](/assets/images/Azure_Application_Proxy_Hijacking/Application_Proxy_Company_Azure.png)
+![screenshot]({{site.baseurl}}/assets/images/Azure_Application_Proxy_Hijacking/Application_Proxy_Company_Azure.png)
 
 After successfully deploying the connector, the next step involves creating a new application. This application will be the destination for the traffic forwarded by our installed connector.
 
-![screenshot](/assets/images/Azure_Application_Proxy_Hijacking/Enterprise_Application.png)
+![screenshot]({{site.baseurl}}/assets/images/Azure_Application_Proxy_Hijacking/Enterprise_Application.png)
 
 On our internal server we have configured a test website using IIS. This site is accessible within our network via the URL: `http://server01.xybytes.com`. To simplify the setup, we have chosen to host both the web server and the connector on the same server. It's important to note, however, that while this configuration simplifies our scenario, it's not a requirement. The connector and the web server can operate on separate machines, provided there is reliable communication between the two.
 
-![screenshot](/assets/images/Azure_Application_Proxy_Hijacking/local_domain.png)
+![screenshot]({{site.baseurl}}/assets/images/Azure_Application_Proxy_Hijacking/local_domain.png)
 
 Additionally, this page is now externally available at the URL `https://companyportal.xybytes.com/`, as illustrated in the image below.
 
-![screenshot](/assets/images/Azure_Application_Proxy_Hijacking/external_domain.png)
+![screenshot]({{site.baseurl}}/assets/images/Azure_Application_Proxy_Hijacking/external_domain.png)
 
 Having established the application endpoint and with our connector fully operational, we can now proceed to analyze the TLS traffic using Burp Suite.
 
@@ -602,22 +602,22 @@ Let's proceed to examine the details of Azure Application Proxy Hijacking Attack
 
 The following diagram illustrates a detailed workflow of how this exploit operates, showcasing the specifics of the attack mechanism.
 
-![screenshot](/assets/images/Azure_Application_Proxy_Hijacking/attacker_scenario.png)
+![screenshot]({{site.baseurl}}/assets/images/Azure_Application_Proxy_Hijacking/attacker_scenario.png)
 
 Our goal is to impersonate the connector on server01, rerouting its traffic to our server. This way, our server becomes the new destination for the Azure Application Proxy URL, `https://companyportal.xybytes.com/`. Simplifying the setup, we'll install both the connector and the internal portal on the same machine, `server01.xybytes.com`. Next, we'll configure an app in application proxy linking `https://companyportal.xybytes.com/` to `http://server01.xybytes.com`. Consequently, when users access the external URL, their requests are directed to our connector, which then fetches the webpage hosted on an IIS server on the same machine. The initial step involves exporting the connector certificate. This is crucial since, as previously explained, the connector's identity is established using this certificate. Due to the connector's certificate being configured as non-exportable, we utilize Mimikatz to extract and export it in a .pfx file format. Subsequently, we move this certificate to our attacker machine, where we have set up a test server with Rebex and deployed a connector using a second tenant. This setup emulates the attacker's infrastructure. We then configure the connector request to pass through Burp Suite using ProxyCap, importing the certificate into Burp Suite under the Client TLS certificate section. The target domain is set to `*.msappproxy.net`. Upon successful implementation, we should observe that the bootstrap request is accepted by Burp Suite and a web socket channel is established. Observe that even when operating from a different tenant, the connection is authenticated as the connector of server01, owing to the imported certificate.
 
-![screenshot](/assets/images/Azure_Application_Proxy_Hijacking/bootstrap_impersonate.png)
+![screenshot]({{site.baseurl}}/assets/images/Azure_Application_Proxy_Hijacking/bootstrap_impersonate.png)
 
 Concurrently, in our attacker's Azure infrastructure, the connector will appear as non-active, indicating that our server is functioning as a connector for the target company.
 
-![screenshot](/assets/images/Azure_Application_Proxy_Hijacking/Inactive_Attacker_Connector.png)
+![screenshot]({{site.baseurl}}/assets/images/Azure_Application_Proxy_Hijacking/Inactive_Attacker_Connector.png)
 
 Connectors are designed to operate with high availability in mind. While there is no assurance of perfectly even traffic distribution across all connectors, nor is there session affinity, the traffic patterns tend to vary. Requests are randomly allocated to different instances of the Application Proxy service. Consequently, this approach generally leads to a near-even distribution of traffic among the connectors. In our scenario, to expedite the process and ensure that the application proxy utilizes our specified connection, we initiate a restart of the company's connector on server01. This strategic move triggers Azure to transition to the new connector, effectively redirecting the traffic flow to our desired endpoint. From this point forward, our injected connector begins functioning as if it were the original server01 connector. As a result, Azure Application Proxy starts forwarding incoming requests to it. The victim remains unaware of the change since the external Azure proxy URL remains the same, not raising any suspicion. At this phase, the attacker can set up a malicious site. For instance, they could create a site to infect the target machine or design a fake clone page of the internal application. This clone page could be used to deceive users into entering their credentials, thinking they are accessing a legitimate internal application. This attack is particularly deceptive as it retains its effectiveness even when the application uses pre-authentication with Microsoft ID. Users, unaware of the underlying scheme, continue to use their standard AD credentials. They remain oblivious to the fact that, post-login, they will be redirected to a website that is not affiliated with their company. For the successful execution of this process, it's crucial to modify the hosts file on the attacker's machine by adding a new entry. This entry should direct the domain `server01.xybytes.com` to the IP address 127.0.0.1. This modification is essential to ensure that the connector correctly resolves the DNS name and accesses the web page hosted on our server.
 
-![screenshot](/assets/images/Azure_Application_Proxy_Hijacking/hijacking_01.png)
+![screenshot]({{site.baseurl}}/assets/images/Azure_Application_Proxy_Hijacking/hijacking_01.png)
 
 The image below illustrates how the Enterprise Application URL of the target company is linked to our malicious web page.
 
-![screenshot](/assets/images/Azure_Application_Proxy_Hijacking/hijacking_02.png)
+![screenshot]({{site.baseurl}}/assets/images/Azure_Application_Proxy_Hijacking/hijacking_02.png)
 
 In this article, I wanted to show how someone could actually use a connector's certificate outside its designated server, which could let them impersonate that specific connector. The big takeaway here is that an attacker could mess with traffic directly from a compromised server where the Azure Application Proxy connector is installed—without needing to export the certificate or reroute traffic. While this approach is more convenient, it does require the attacker to stay active on the server and control traffic within the network. What’s really interesting, though, is that an attacker could keep using this method even if they lose direct access to the compromised server. So, it's crucial to treat Azure Application Proxy certificates as high-value assets that need careful monitoring. Keeping an eye out for any attempts to steal or misuse these certificates is key. Plus, monitoring the Connector process can help catch unusual activity, like protocol disruptions or authentication issues, and provide early warnings of potential security threats.
