@@ -28,8 +28,9 @@ Before delving into the details of a new attack technique that enables a malicio
 
 <div align="center">
     <img src="/assets/images/Azure_Application_Proxy_Hijacking/Connector_Installation_01.png" />
-    <br><br>
 </div>
+
+<div style="height: 20px;"></div>
 
 <div align="center">
     <img src="/assets/images/Azure_Application_Proxy_Hijacking/Connector_Installation_02.png" />
