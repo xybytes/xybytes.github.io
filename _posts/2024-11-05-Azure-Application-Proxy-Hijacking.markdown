@@ -472,7 +472,7 @@ Connection: close
 After obtaining the bootstrap information, connections are established to each specified endpoint, such as `https://cwap-eur1-frc2.servicebus.windows.net/$servicebus/websocket`. This conenction open a persistent websocket channel linked to the [Azure Service Bus](https://learn.microsoft.com/en-us/azure/service-bus-messaging/service-bus-messaging-overview). In this particular scenario, the messaging used the [AMQP standard](https://learn.microsoft.com/en-us/azure/service-bus-messaging/service-bus-amqp-overview) over WebSockets. It's noteworthy that the [shared access signature (SAS)](https://learn.microsoft.com/en-us/azure/service-bus-messaging/service-bus-sas) authentication for these connections leverages key information obtained from the bootstrap response. After the connection is initialised, agents are waiting for a connection request. The screenshot below displays the WebSocket messages intercepted using Burp Suite.
 
 <div align="center">
-    <img src="/assets/img/Azure_Application_Proxy_Hijacking/websocket.png" />
+    <img src="/assets/imges/Azure_Application_Proxy_Hijacking/websocket.png" />
 </div>
 
 When a websocket triggers a signal, the connector initiates a request to `/subscriber/admin`. The response to this request is a JSON payload, which contains essential information directing the connector on where to route the inbound request.
@@ -597,7 +597,7 @@ border:none;
 Let's proceed to examine the details of Azure Application Proxy Hijacking Attack. In this hypothetical scenario, we assume that an attacker has compromised a server where a connector is installed. Their objective is to hijack traffic from the company's intranet web application, redirecting it to a malicious URL within the attacker’s infrastructure.
 
 <div align="center">
-    <img src="/assets/img/Azure_Application_Proxy_Hijacking/server_compromise.png" />
+    <img src="/assets/images/Azure_Application_Proxy_Hijacking/server_compromise.png" />
 </div>
 
 The following diagram illustrates a detailed workflow of how this exploit operates, showcasing the specifics of the attack mechanism.
