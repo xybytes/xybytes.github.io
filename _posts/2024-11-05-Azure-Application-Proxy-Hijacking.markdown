@@ -36,6 +36,8 @@ Before delving into the details of a new attack technique that enables a malicio
     <img src="/assets/images/Azure_Application_Proxy_Hijacking/Connector_Installation_02.png" />
 </div>
 
+<div style="height: 20px;"></div>
+
 Once the installation is complete, a brief waiting period is required. After this, simply refresh your list of connectors and you should see your hostname appear, indicating a successful setup. The connector will be listed under _Connectors_ in the Azure Application Proxy section.
 
 ![screenshot]({{site.baseurl}}/assets/images/Azure_Application_Proxy_Hijacking/Application_Proxy_Company_Azure.png)
@@ -475,8 +477,10 @@ Connection: close
 After obtaining the bootstrap information, connections are established to each specified endpoint, such as `https://cwap-eur1-frc2.servicebus.windows.net/$servicebus/websocket`. This conenction open a persistent websocket channel linked to the [Azure Service Bus](https://learn.microsoft.com/en-us/azure/service-bus-messaging/service-bus-messaging-overview). In this particular scenario, the messaging used the [AMQP standard](https://learn.microsoft.com/en-us/azure/service-bus-messaging/service-bus-amqp-overview) over WebSockets. It's noteworthy that the [shared access signature (SAS)](https://learn.microsoft.com/en-us/azure/service-bus-messaging/service-bus-sas) authentication for these connections leverages key information obtained from the bootstrap response. After the connection is initialised, agents are waiting for a connection request. The screenshot below displays the WebSocket messages intercepted using Burp Suite.
 
 <div align="center">
-    <img src="/assets/imges/Azure_Application_Proxy_Hijacking/websocket.png" />
+    <img src="/assets/images/Azure_Application_Proxy_Hijacking/websocket.png" />
 </div>
+
+<div style="height: 20px;"></div>
 
 When a websocket triggers a signal, the connector initiates a request to `/subscriber/admin`. The response to this request is a JSON payload, which contains essential information directing the connector on where to route the inbound request.
 
@@ -602,6 +606,8 @@ Let's proceed to examine the details of Azure Application Proxy Hijacking Attack
 <div align="center">
     <img src="/assets/images/Azure_Application_Proxy_Hijacking/server_compromise.png" />
 </div>
+
+<div style="height: 20px;"></div>
 
 The following diagram illustrates a detailed workflow of how this exploit operates, showcasing the specifics of the attack mechanism.
 
