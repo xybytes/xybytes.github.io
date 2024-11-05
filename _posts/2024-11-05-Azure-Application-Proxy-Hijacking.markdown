@@ -7,8 +7,6 @@ categories:
   - Azure
 ---
 
-### What is Azure Application Proxy?
-
 Azure Application Proxy offers a groundbreaking solution for remote users needing access to on-premises web applications. By integrating seamlessly with Microsoft Entra ID for one-time sign-on, it simplifies the user experience while maintaining high security standards. The technology is based on two main components: the Application Proxy Server and the Application Proxy Connector.
 
 The diagram below showcases the overall structure and function of the Azure application proxy at a high level. Let’s explore how it operates.
