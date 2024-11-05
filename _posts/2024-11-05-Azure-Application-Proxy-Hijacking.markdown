@@ -30,6 +30,9 @@ Before delving into the details of a new attack technique that enables a malicio
 
 <div align="center">
     <img src="/assets/images/Azure_Application_Proxy_Hijacking/Connector_Installation_01.png" />
+</div>
+
+<div align="center">
     <img src="/assets/images/Azure_Application_Proxy_Hijacking/Connector_Installation_02.png" />
 </div>
 
