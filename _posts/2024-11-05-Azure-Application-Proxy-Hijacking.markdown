@@ -432,7 +432,7 @@ Connection: close
 				<a:ReliableSessionEnabled>true</a:ReliableSessionEnabled>
 				<a:Scheme>sb</a:Scheme>
 				<a:ServicePath>76515347-005a-4ad9-b56e-0440219d98f8_07975fa6-6f9b-4e2c-b8e5-a241afaf72ac_reliable</a:ServicePath>
-				<a:SharedAccessKey>h8eHDtV+hCKTIwI9WsSwsYPbQeBreTFRawj3rwsiXN8=</a:SharedAccessKey>
+				<a:SharedAccessKey>h8eHDtV+hCKT[...]</a:SharedAccessKey>
 				<a:SharedAccessKeyName>Connector</a:SharedAccessKeyName>
 			</a:SignalingListenerEndpointSettings>
 			<a:SignalingListenerEndpointSettings i:type="a:ServiceBusSignalingListenerEndpointSettings">
