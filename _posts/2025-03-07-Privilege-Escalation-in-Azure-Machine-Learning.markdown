@@ -7,7 +7,7 @@ categories:
   - Azure
 ---
 
-A few months ago, when browsing through the Azure services list, I stumbled upon Azure Machine Learning. The sheer number of capabilities and complexity of the service got me curious, so I decided it would be interesting to test it for misconfigurations and vulnerabilities. After some trial and error, my research uncovered intriguing findings. In this blog post, I’ll introduce a new privilege escalation technique that can occur in Azure Machine Learning. These findings were also presented at the [BSides Zagreb 2025 conference]("https://www.bsideszagreb.com/archive-2025/#4").
+A few months ago, when browsing through the Azure services list, I stumbled upon Azure Machine Learning. The sheer number of capabilities and complexity of the service got me curious, so I decided it would be interesting to test it for misconfigurations and vulnerabilities. After some trial and error, my research uncovered intriguing findings. In this blog post, I’ll introduce a new privilege escalation technique that can occur in Azure Machine Learning. These findings were also presented at the [BSides Zagreb 2025 conference](https://www.bsideszagreb.com/archive-2025/#4).
 
 ## Introduction
 
