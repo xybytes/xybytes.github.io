@@ -22,7 +22,7 @@ The diagram below showcases the overall structure and function of the Azure appl
 
 ### A Deep Dive into Azure Application Proxy
 
-Before looking into the details of a new attack method that allows a bad attacker to redirect the traffic of an application proxy to a harmful website, it's important to understand how this system is set up. Let's start by learning how to configure Azure Application Proxy, which will help us understand its possible weaknesses better. To install an Application Proxy connector, the first thing to do is to sign in to the Azure portal. Here, you can download the installation package that you need. During installation, you will be asked to sign in with your Azure AD account, which is an important step to start the service.
+Before looking into the details of a new attack method that allows a bad attacker to redirect the traffic of an application proxy to a harmful website, it's important to understand how this system is set up. Let's start by learning how to configure Azure Application Proxy, which will help us understand its possible weaknesses better. To install an Application Proxy connector, the first thing to do is to sign in to the Azure portal. During installation, you will be asked to sign in with your Azure AD account, which is an important step to start the service.
 
 ![screenshot]({{site.baseurl}}/assets/images/Azure_Application_Proxy_Hijacking/Download_Connector.png)
 
