@@ -1,6 +1,6 @@
 ---
 title: "When Azure Dynamic Groups Meet Weak ACLs"
-date: 2024-06-16 13:32:20 +0300
+date: 2025-08-29 20:00:00 +0300
 tags:
   - Azure, Active Directory
 categories:
