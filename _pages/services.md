@@ -22,7 +22,7 @@ author_profile: true
 
 ---
 
-<div style="background:white; padding:2rem; border-radius:10px; box-shadow:0 2px 5px rgba(0,0,0,0.1); margin-bottom:2rem;">
+<div style="background:white;color:#003366;  padding:2rem; border-radius:10px; box-shadow:0 2px 5px rgba(0,0,0,0.1); margin-bottom:2rem;">
   <h2 style="color:#003366;">Active Directory Assessment</h2>
   <p>
     An organization’s Active Directory domains are often many years old, containing configuration changes accumulated over the years. 
@@ -66,7 +66,7 @@ author_profile: true
 
 ---
 
-<div style="background:#f8f9fa; padding:2rem; border-radius:10px; box-shadow:0 2px 5px rgba(0,0,0,0.1);">
+<div style="background:#f8f9fa;color:#003366; padding:2rem; border-radius:10px; box-shadow:0 2px 5px rgba(0,0,0,0.1);">
   <h2 style="color:#003366;">Microsoft Entra (Azure AD) Assessment</h2>
   <p>
     A typical Entra ID configuration consists of organizations using <strong>Microsoft 365</strong> with Microsoft Entra ID as an identity platform at its core. 
