@@ -1,5 +1,5 @@
 ---
-title: "Abusing Overly Permissive Roles in Azure File Sync"
+title: "Abusing Overly Permissive Role in Azure File Sync"
 date: 2026-03-31 12:00:00 +0300
 tags:
   - Azure
