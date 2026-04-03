@@ -7,8 +7,6 @@ categories:
   - Azure
 ---
 
-## What is Azure File Sync?
-
 Azure File Sync is an Azure service that helps centralize your organization’s file shares in Azure Files. It allows you to synchronize file data from Windows Servers to Azure Files. This service is especially valuable for organizations that want to preserve the performance of local file access while also taking advantage of the scalability and flexibility offered by Azure.
 
 Like many other Azure hybrid services, Azure File Sync can be quite complex because it consists of several components that must work together across both on-premises and cloud environments. The synchronization of a new file share from an on-premises server is handled through an agent installed on the local machine. This agent authenticates with Azure and synchronizes the local folder with the corresponding Azure file share.
